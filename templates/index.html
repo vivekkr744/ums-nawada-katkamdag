@@ -1,0 +1,2567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMS Nawada Katkamdag - Admin Portal v2.0 🔥</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- 🔥 Firebase SDKs (Compat Version - Easy to use) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #1e3a8a; --secondary: #3b82f6; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444; --bg-color: #f0f4ff;
+            --box-bg: #ffffff; --text-color: #1f2937; --border-color: #e5e7eb;
+            --sidebar-bg: #0f172a; --input-bg: #ffffff;
+        }
+        [data-theme="dark"] {
+            --primary: #3b82f6; --secondary: #60a5fa; --success: #34d399;
+            --warning: #fbbf24; --danger: #f87171; --bg-color: #020617;
+            --box-bg: #1e293b; --text-color: #f3f4f6; --border-color: #334155;
+            --sidebar-bg: #000000; --input-bg: #0f172a;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+
+        /* 🔄 LOADING OVERLAY */
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.92); z-index: 20000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; backdrop-filter: blur(8px); }
+        .spinner { width: 55px; height: 55px; border: 5px solid rgba(255,255,255,0.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-msg { color: white; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+        .loading-sub { color: rgba(255,255,255,0.6); font-size: 13px; }
+
+        /* ⚠️ SETUP BANNER */
+        #setupBanner { display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 12px 20px; text-align: center; font-weight: 700; font-size: 13px; position: fixed; top: 0; left: 0; right: 0; z-index: 19999; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        #setupBanner a { color: white; text-decoration: underline; cursor: pointer; }
+
+        /* 🔥 MODE BADGE */
+        .mode-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-top: 8px; }
+        .mode-badge.cloud { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+        .mode-badge.demo { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .mode-badge.offline { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+
+        #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10001; display: none; }
+
+        /* 🔒 Login */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.97); z-index: 10000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(12px); }
+        .login-box { background: var(--box-bg); padding: 40px 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 420px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
+        .login-box::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981, #f59e0b); }
+        .login-box h2 { color: var(--primary); margin-top: 0; font-size: 26px; }
+        .firebase-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.3); border-radius: 20px; font-size: 12px; font-weight: 700; color: #f59e0b; margin-bottom: 15px; }
+        .hint-box { background: rgba(59,130,246,0.08); padding: 12px 15px; border-left: 4px solid var(--secondary); border-radius: 8px; font-size: 13px; color: var(--text-color); margin: 15px 0; text-align: left; }
+        .login-box .input-group { margin-bottom: 14px; text-align: left; }
+        .login-box input { width: 100%; padding: 14px; border: 1.5px solid var(--border-color); border-radius: 8px; font-size: 15px; background: var(--input-bg); color: var(--text-color); transition: 0.3s; box-sizing: border-box; }
+        .login-box input:focus { border-color: var(--secondary); outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .login-box button { width: 100%; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        .login-box button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.35); }
+        .msg-box { margin-top: 14px; padding: 12px; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 500; display: none; }
+        .msg-box.error { display: block; background: #fdecea; color: #d93025; border: 1px solid #f5c6cb; }
+        .msg-box.success { display: block; background: #e6f4ea; color: #188038; border: 1px solid #c3e6cb; }
+        .msg-box.info { display: block; background: #e8f0fe; color: #1a73e8; border: 1px solid #c5d6f7; }
+
+        /* 📱 Sidebar */
+        .sidebar { width: 270px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.2); z-index: 10; }
+        .sidebar-brand { padding: 22px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .sidebar-brand h2 { margin: 0; font-size: 20px; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-brand p { margin: 4px 0 0; font-size: 12px; color: #9ca3af; font-weight: bold; }
+        .live-clock { margin-top: 8px; font-size: 14px; color: #34d399; font-family: monospace; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 5px; letter-spacing: 1px; }
+        #connectionBadge { display: block; margin-top: 6px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; background: rgba(52,211,153,0.15); color: #34d399; transition: 0.3s; }
+        .nav-menu { flex: 1; padding: 15px 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+        .nav-link { padding: 13px 25px; color: #cbd5e1; font-size: 15px; font-weight: 500; cursor: pointer; border-left: 4px solid transparent; transition: 0.3s; display: flex; align-items: center; gap: 12px; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.08); color: white; border-left-color: #fbbf24; }
+
+        /* 🖥️ Main Content */
+        .main-content { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-color); }
+        .page-section { display: none; animation: fadeIn 0.4s ease; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 🏫 Header */
+        .school-header { text-align: center; background: linear-gradient(135deg, #1e3a8a, #1e40af, #1d4ed8); color: white; padding: 40px 20px; border-radius: 16px; margin-bottom: 28px; position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(30,58,138,0.3); }
+        .school-header::before { content:''; position:absolute; top:-50%; right:-10%; width:300px; height:300px; background:rgba(255,255,255,0.05); border-radius:50%; }
+        .school-header::after { content:''; position:absolute; bottom:-30%; left:-5%; width:200px; height:200px; background:rgba(255,255,255,0.04); border-radius:50%; }
+        .school-header h1 { margin:0; font-size:32px; letter-spacing:2px; font-weight:800; position:relative; z-index:1; }
+        .school-header p { opacity:0.9; font-size:16px; margin-top:8px; position:relative; z-index:1; }
+        .udise-tag { display:inline-block; background:rgba(255,255,255,0.15); padding:4px 14px; border-radius:20px; font-size:13px; margin-top:8px; position:relative; z-index:1; }
+
+        /* 📊 Dashboard */
+        .dash-title { display:flex; align-items:center; gap:10px; margin-bottom:15px; margin-top:25px; }
+        .dash-title h2 { margin:0; color:var(--primary); font-size:20px; }
+        .dash-title .tline { flex:1; height:2px; background:linear-gradient(to right,var(--primary),transparent); border-radius:2px; }
+
+        .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(195px, 1fr)); gap:16px; }
+        .stat-card { background:var(--box-bg); padding:22px 18px; border-radius:16px; border:1px solid var(--border-color); position:relative; overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; cursor:default; }
+        .stat-card:hover { transform:translateY(-4px); box-shadow:0 12px 35px rgba(0,0,0,0.1); }
+        .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; border-radius:16px 16px 0 0; }
+        .stat-card.total::before { background:linear-gradient(90deg,#1e3a8a,#3b82f6); }
+        .stat-card.boys::before { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+        .stat-card.girls::before { background:linear-gradient(90deg,#ec4899,#f9a8d4); }
+        .stat-card.disability::before { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+        .stat-card.own-acc::before { background:linear-gradient(90deg,#10b981,#34d399); }
+        .stat-card.guardian-acc::before { background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+        .stat-card.alumni-count::before { background:linear-gradient(90deg,#ef4444,#f87171); }
+        .stat-icon { font-size:30px; margin-bottom:8px; display:block; }
+        .stat-card h3 { margin:0; font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
+        .stat-card h2 { margin:6px 0 0; font-size:38px; font-weight:800; color:var(--text-color); line-height:1; }
+        .stat-sub { font-size:11px; color:#9ca3af; margin-top:5px; }
+        .stat-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; margin-top:5px; }
+
+        .box { background:var(--box-bg); padding:28px; border-radius:16px; border:1px solid var(--border-color); box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+
+        /* Form */
+        .form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:18px; }
+        .form-section-title { grid-column:1/-1; margin-top:8px; color:var(--primary); border-bottom:2px solid var(--border-color); padding-bottom:8px; font-size:18px; }
+        .input-group { display:flex; flex-direction:column; }
+        .input-group label { font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text-color); opacity:0.85; }
+        input, select { padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:14px; background:var(--input-bg); color:var(--text-color); transition:0.2s; }
+        input:focus, select:focus { border-color:var(--secondary); outline:none; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+        .btn-submit { grid-column:1/-1; padding:15px; background:linear-gradient(135deg,#10b981,#059669); color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold; margin-top:12px; transition:0.2s; box-shadow:0 4px 15px rgba(16,185,129,0.3); }
+        .btn-submit:hover { transform:translateY(-2px); }
+        .btn-submit.update-mode { background:linear-gradient(135deg,#f59e0b,#d97706); box-shadow:0 4px 15px rgba(245,158,11,0.3); color:#000; }
+
+        /* Badges */
+        .disability-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; }
+        .disability-badge.yes { background:rgba(139,92,246,0.15); color:#7c3aed; border:1px solid rgba(139,92,246,0.3); }
+        .disability-badge.no { background:rgba(16,185,129,0.1); color:#059669; border:1px solid rgba(16,185,129,0.2); }
+        .bank-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; }
+        .bank-badge.student { background:rgba(16,185,129,0.1); color:#059669; border:1px solid rgba(16,185,129,0.2); }
+        .bank-badge.guardian { background:rgba(245,158,11,0.1); color:#d97706; border:1px solid rgba(245,158,11,0.2); }
+
+        /* Tools & Table */
+        .tools-bar { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; align-items:center; justify-content:space-between; background:var(--box-bg); padding:15px; border-radius:12px; border:1px solid var(--border-color); }
+        .search-group { display:flex; gap:10px; flex:2; min-width:300px; flex-wrap:wrap; }
+        .btn-action { padding:10px 16px; border:none; border-radius:8px; cursor:pointer; font-weight:600; color:white; transition:0.2s; display:inline-flex; align-items:center; gap:5px; font-size:13px; }
+        .btn-action:hover { opacity:0.9; transform:translateY(-1px); }
+        .btn-export { background:linear-gradient(135deg,#10b981,#059669); }
+        .btn-print { background:linear-gradient(135deg,#6b7280,#4b5563); }
+
+        table { width:100%; border-collapse:separate; border-spacing:0; margin-top:10px; font-size:14px; }
+        th, td { padding:12px; text-align:left; border-bottom:1px solid var(--border-color); vertical-align:middle; }
+        th { background:linear-gradient(135deg,var(--primary),#1e40af); color:white; font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:0.5px; }
+        th:first-child { border-top-left-radius:10px; } th:last-child { border-top-right-radius:10px; }
+        tr:hover td { background:rgba(59,130,246,0.04); }
+        .action-btns button { padding:7px 9px; border:none; border-radius:6px; cursor:pointer; margin-right:3px; color:white; font-size:12px; font-weight:bold; transition:0.2s; }
+        .action-btns button:hover { transform:scale(1.05); }
+        .btn-view { background:#3b82f6; } .btn-edit { background:#f59e0b; color:black !important; } .btn-del { background:#ef4444; } .btn-passout { background:#8b5cf6; } .btn-report { background:#0ea5e9; }
+
+        /* Toast */
+        #toastBox { position:fixed; bottom:30px; right:30px; display:flex; flex-direction:column; align-items:flex-end; z-index:9999; }
+        .toast { width:320px; padding:16px 20px; background:white; color:#1f2937; margin-bottom:10px; border-radius:10px; border-left:6px solid var(--success); font-weight:600; transform:translateX(120%); animation:slideIn 0.3s forwards, slideOut 0.5s forwards 3.5s; box-shadow:0 8px 20px rgba(0,0,0,0.12); }
+        .toast.error { border-left-color:var(--danger); }
+        .toast.info { border-left-color:var(--secondary); }
+        @keyframes slideIn { to { transform:translateX(0); } }
+        @keyframes slideOut { to { transform:translateX(120%); } }
+
+        /* Modals */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:11000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .modal-content { background:var(--box-bg); width:90%; max-width:600px; padding:25px; border-radius:16px; border:1px solid var(--border-color); max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.3); }
+        .modal-large { max-width:800px; }
+
+        /* Birthday */
+        .bday-special-box { background:linear-gradient(135deg,#ff9a9e,#fecfef); color:#333; text-align:center; border-radius:15px; padding:30px; box-shadow:0 10px 30px rgba(232,62,140,0.4); border:4px solid white; }
+        .bday-special-box h2 { font-size:32px; color:#d63384; margin:0 0 10px; }
+        .bday-list-item { background:rgba(255,255,255,0.8); margin:10px 0; padding:15px; border-radius:10px; font-size:18px; font-weight:bold; border-left:5px solid #d63384; display:flex; justify-content:space-between; align-items:center; }
+
+        /* ID Card */
+        .id-card-wrapper { display:none; width:54mm; height:86mm; margin:0 auto; background:white; border-radius:4px; box-shadow:0 4px 15px rgba(0,0,0,0.2); border:2px solid #1e3a8a; overflow:hidden; position:relative; box-sizing:border-box; flex-direction:column; font-family:Arial,sans-serif; }
+        .id-header { background:#1e3a8a; color:white; text-align:center; padding:4px; }
+        .id-header h3 { margin:0; font-size:10px; letter-spacing:0.5px; }
+        .id-header p { margin:2px 0 0; font-size:8px; color:#fbbf24; font-weight:bold; }
+        .id-photo { width:22mm; height:28mm; background:#e5e7eb; margin:4px auto 2px; border:2px solid #1e3a8a; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:8px; overflow:hidden; }
+        .id-photo img { width:100%; height:100%; object-fit:cover; }
+        .id-body { padding:2px 6px; text-align:center; color:black; flex:1; }
+        .id-name { font-size:11px; font-weight:bold; color:#1e3a8a; margin-bottom:2px; text-transform:uppercase; }
+        .id-class { font-size:9px; font-weight:bold; color:#ef4444; margin-bottom:6px; }
+        .id-details { font-size:8px; text-align:left; line-height:1.4; }
+        .id-details strong { color:#1e3a8a; display:inline-block; width:16mm; }
+
+        /* Report Card */
+        .report-card-wrapper { background:white; padding:30px; border:2px solid #1e3a8a; border-radius:10px; color:black; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin:0 auto; max-width:700px; }
+        .rc-header { text-align:center; border-bottom:3px double #1e3a8a; padding-bottom:15px; margin-bottom:20px; }
+        .rc-header h2 { margin:0; font-size:24px; color:#1e3a8a; text-transform:uppercase; }
+        .rc-header p { margin:5px 0 0; font-size:14px; font-weight:bold; }
+        .rc-title { text-align:center; font-size:18px; font-weight:bold; background:#1e3a8a; color:white; display:inline-block; padding:5px 20px; border-radius:20px; margin-bottom:20px; }
+        .rc-student-info { display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:14px; margin-bottom:20px; }
+        .rc-table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+        .rc-table th, .rc-table td { border:1px solid #1e3a8a; padding:10px; text-align:center; }
+        .rc-table th { background:rgba(30,58,138,0.1); color:#1e3a8a; }
+        .rc-table td:first-child { text-align:left; font-weight:bold; }
+        .rc-summary { display:flex; justify-content:space-between; background:rgba(16,185,129,0.1); padding:15px; border:1px solid #10b981; border-radius:5px; font-weight:bold; font-size:16px; margin-bottom:40px; }
+        .rc-signatures { display:flex; justify-content:space-between; margin-top:50px; font-size:14px; font-weight:bold; }
+        .rc-signatures div { border-top:1px solid black; padding-top:5px; width:150px; text-align:center; }
+
+        .table-thumb { width:40px; height:40px; border-radius:6px; object-fit:cover; border:1px solid #ccc; display:inline-block; vertical-align:middle; margin-right:8px; }
+        .charts-container { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-top:20px; }
+        .alumni-stats-box { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:15px; padding:12px 15px; background:rgba(139,92,246,0.08); border-left:4px solid #8b5cf6; border-radius:8px; font-size:14px; font-weight:600; }
+
+        /* Firebase Setup Guide */
+        #fbSetupGuide { display:none; background:var(--box-bg); border:2px solid #f59e0b; border-radius:12px; padding:20px; margin-bottom:20px; }
+        #fbSetupGuide h3 { color:#d97706; margin-top:0; }
+        .setup-step { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; padding:10px; background:rgba(245,158,11,0.05); border-radius:8px; }
+        .step-num { background:#f59e0b; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; flex-shrink:0; }
+        .step-text { font-size:13px; }
+        .step-text code { background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px; font-family:monospace; font-size:12px; }
+
+
+        /* 📱 MOBILE & TABLET RESPONSIVE */
+        .hamburger { display: none; position: fixed; top: 15px; left: 15px; z-index: 10001; background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px 13px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; overflow: visible; }
+            .hamburger { display: block; }
+            .sidebar { position: fixed; left: -280px; top: 0; height: 100vh; z-index: 10; transition: left 0.3s ease; width: 270px; overflow-y: auto; }
+            .sidebar.open { left: 0; }
+            .sidebar-overlay.open { display: block; }
+            .main-content { padding: 15px; padding-top: 65px; width: 100%; box-sizing: border-box; overflow-y: auto; min-height: 100vh; }
+            .school-header h1 { font-size: 20px; letter-spacing: 0.5px; }
+            .school-header { padding: 25px 15px; }
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-card h2 { font-size: 28px; }
+            .charts-container { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .tools-bar { flex-direction: column; }
+            .search-group { min-width: unset; width: 100%; }
+            .search-group select, .search-group input { width: 100%; box-sizing: border-box; }
+            table { font-size: 12px; }
+            th, td { padding: 8px 6px; }
+            .action-btns button { padding: 6px 7px; font-size: 11px; margin-bottom: 3px; }
+            .modal-content { width: 95%; padding: 15px; }
+            .btn-submit { font-size: 14px; padding: 12px; }
+            .box { padding: 15px; }
+            .rc-student-info { grid-template-columns: 1fr; }
+            .rc-summary { flex-direction: column; gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .stat-card { padding: 15px 12px; }
+            .stat-card h2 { font-size: 24px; }
+            .stat-icon { font-size: 22px; }
+            .school-header h1 { font-size: 17px; }
+        }
+
+        /* 🌐 NETWORK STATUS INDICATOR */
+        #networkStatusBar { 
+            display: none; position: fixed; top: 0; left: 0; right: 0; 
+            z-index: 19998; padding: 10px 20px; text-align: center; 
+            font-size: 13px; font-weight: 700; transition: all 0.4s ease;
+        }
+        #networkStatusBar.offline { 
+            display: block; 
+            background: linear-gradient(135deg, #ef4444, #dc2626); 
+            color: white; 
+        }
+        #networkStatusBar.slow { 
+            display: block; 
+            background: linear-gradient(135deg, #f59e0b, #d97706); 
+            color: white; 
+        }
+        #networkStatusBar.back-online { 
+            display: block; 
+            background: linear-gradient(135deg, #10b981, #059669); 
+            color: white; 
+        }
+
+        /* Forgot Password link in login */
+        .forgot-pwd-link { 
+            display: block; text-align: right; font-size: 12px; 
+            color: var(--secondary); cursor: pointer; margin-top: 4px; 
+            text-decoration: underline; 
+        }
+        .forgot-pwd-link:hover { opacity: 0.8; }
+
+        @media print {
+            /* ── BLANK PAGE FIX: Force block layout, remove all overlays ── */
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            html { height: auto !important; }
+            body { 
+                display: block !important; 
+                height: auto !important; 
+                overflow: visible !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: white !important;
+                min-height: unset !important;
+            }
+            /* Hide everything by default */
+            .sidebar, .main-content, #loginOverlay, #loadingOverlay, 
+            #setupBanner, .hamburger, .sidebar-overlay, .modal { 
+                display: none !important; 
+            }
+            /* ── PRINT TABLE MODE ── */
+            .print-table-mode .main-content { display: block !important; padding: 0 !important; }
+            .print-table-mode #databaseSection { display: block !important; }
+            .print-table-mode .box { border: none !important; box-shadow: none !important; padding: 5px 0 !important; }
+            .print-table-mode .school-header, .print-table-mode .dash-title,
+            .print-table-mode #dashboardStats, .print-table-mode .charts-container,
+            .print-table-mode #addStudentSection, .print-table-mode #alumniSection,
+            .print-table-mode #promotionSection, .print-table-mode #adminSettingsSection, .print-table-mode .tools-bar,
+            .print-table-mode #dbStatsBar { display: none !important; }
+            .print-table-mode #dataTable th:last-child, 
+            .print-table-mode #dataTable td:last-child { display: none !important; }
+            /* ── PRINT ALUMNI MODE ── */
+            .print-alumni-mode .main-content { display: block !important; padding: 0 !important; }
+            .print-alumni-mode #alumniSection { display: block !important; }
+            .print-alumni-mode .box { border: none !important; box-shadow: none !important; padding: 5px 0 !important; }
+            .print-alumni-mode #databaseSection, .print-alumni-mode #addStudentSection,
+            .print-alumni-mode #dashboardSection, .print-alumni-mode #promotionSection,
+            .print-alumni-mode .tools-bar, .print-alumni-mode .alumni-stats-box { display: none !important; }
+            .print-alumni-mode #alumniTable th:last-child, 
+            .print-alumni-mode #alumniTable td:last-child { display: none !important; }
+            /* ── PRINT REPORT CARD MODE ── */
+            .print-report-mode #reportCardModal { 
+                display: block !important; position: static !important; 
+                background: white !important; width: 100% !important;
+            }
+            .print-report-mode .modal-content { 
+                display: block !important; position: static !important; 
+                width: 100% !important; max-width: none !important; 
+                border: none !important; padding: 0 !important; box-shadow: none !important; 
+            }
+            .print-report-mode #marksEntrySection { display: none !important; }
+            .print-report-mode #printableReportSection { display: block !important; }
+            .print-report-mode .report-card-wrapper { 
+                box-shadow: none !important; border: 2px solid black !important; 
+                max-width: 100% !important; margin: 0 !important; 
+            }
+            .print-report-mode .report-card-wrapper button { display: none !important; }
+            /* ── PRINT ID CARD MODE ── */
+            .print-id-mode #viewModal { 
+                display: block !important; position: static !important; background: white !important; 
+            }
+            .print-id-mode .modal-content { 
+                display: block !important; position: static !important; 
+                width: 100% !important; max-width: none !important; 
+                border: none !important; padding: 0 !important; box-shadow: none !important; 
+            }
+            .print-id-mode #normalProfileView { display: none !important; }
+            .print-id-mode #idCardView { display: block !important; }
+            .print-id-mode #idCardView button { display: none !important; }
+            .print-id-mode .id-card-wrapper { 
+                display: flex !important; margin: 20px auto !important; 
+                box-shadow: none !important; border: 1px solid black !important; 
+                position: static !important;
+            }
+            /* ── PRINT PROFILE MODE ── */
+            .print-profile-mode #viewModal { 
+                display: block !important; position: static !important; background: white !important; 
+            }
+            .print-profile-mode .modal-content { 
+                display: block !important; position: static !important; 
+                width: 100% !important; max-width: none !important; 
+                border: none !important; padding: 0 !important; box-shadow: none !important; 
+            }
+            .print-profile-mode #idCardView { display: none !important; }
+            .print-profile-mode #normalProfileView { display: block !important; padding: 20px !important; }
+            .print-profile-mode #normalProfileView button { display: none !important; }
+            /* ── PRINT ID CARD ONLY MODE (clean, no blanks) ── */
+            .print-idcard-only body { margin: 0 !important; padding: 0 !important; }
+            .print-idcard-only .sidebar,
+            .print-idcard-only .main-content,
+            .print-idcard-only #loginOverlay,
+            .print-idcard-only #loadingOverlay,
+            .print-idcard-only .hamburger,
+            .print-idcard-only .modal,
+            .print-idcard-only #networkStatusBar,
+            .print-idcard-only #toastBox,
+            .print-idcard-only #setupBanner { display: none !important; }
+            .print-idcard-only #printIdContainer {
+                display: block !important;
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100% !important;
+                background: white !important;
+            }
+            /* ── TABLE STYLES FOR PRINT ── */
+            table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+            th { background-color: #1e3a8a !important; color: white !important; }
+            td, th { padding: 8px; border: 1px solid #ddd; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ⚡ LOADING OVERLAY -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-msg" id="loadingMsg">🔥 Connecting to Cloud...</div>
+    <div class="loading-sub" id="loadingSub">Please wait...</div>
+</div>
+
+<!-- 🌐 NETWORK STATUS BAR -->
+<div id="networkStatusBar"></div>
+
+<!-- ⚠️ SETUP BANNER -->
+<div id="setupBanner">
+    ⚠️ Firebase is not configured — System is running in DEMO mode (data will be saved in this browser only). 
+    <a onclick="document.getElementById('fbSetupGuide').style.display='block'; switchTab('dashboardSection', document.querySelector('.nav-link'));">Setup Guide dekho ↓</a>
+</div>
+
+<button class="hamburger" onclick="toggleSidebar()" id="hamburgerBtn">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<canvas id="confettiCanvas"></canvas>
+
+<!-- 🔒 LOGIN OVERLAY -->
+<div id="loginOverlay">
+    <div class="login-box">
+        <div class="firebase-badge">🔥 Firebase Cloud Powered</div>
+        <h2>🛡️ Admin Login</h2>
+        <p style="color:#6b7280;font-size:14px;margin-top:0;">UMS Nawada Katkamdag — Secure Access</p>
+        <div class="input-group" style="margin-top:20px;">
+            <input type="text" id="adminId" placeholder="Enter Login ID" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <input type="password" id="adminPin" placeholder="Enter Password" onkeyup="if(event.key==='Enter') checkLogin()" autocomplete="off">
+        </div>
+        <button onclick="checkLogin()">🔓 Login to Dashboard</button>
+        <span class="forgot-pwd-link" onclick="openForgotPassword()">🔑 Forgot Password?</span>
+        <div id="displayMsg" class="msg-box"></div>
+        <div id="loginModeBadge" style="margin-top:10px;"></div>
+    </div>
+</div>
+
+<div id="toastBox"></div>
+
+<!-- 📱 SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <h2>UMS Nawada</h2>
+        <p>Katkamdag, Hazaribagh</p>
+        <div class="live-clock" id="liveClock">00:00:00</div>
+        <span id="connectionBadge">⚪ Connecting...</span>
+    </div>
+    <div class="nav-menu">
+        <div class="nav-link active" onclick="switchTab('dashboardSection',this)">📊 Dashboard Overview</div>
+        <div class="nav-link" onclick="switchTab('addStudentSection',this)" id="navAddStudent">➕ Add New Student</div>
+        <div class="nav-link" onclick="switchTab('databaseSection',this)">📋 Active Database</div>
+        <div class="nav-link" onclick="switchTab('alumniSection',this)" style="color:#c4b5fd;">🎓 Passout / Alumni</div>
+        <div class="nav-link" onclick="switchTab('promotionSection',this)" style="color:#34d399;">📈 Class Promotion</div>
+        <div style="margin-top:auto;border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;">
+            <div class="nav-link" onclick="checkBirthdays(true)" style="color:#fbcfe8;">🎂 Birthday Tracker</div>
+            <div class="nav-link" onclick="switchTab('adminSettingsSection',this)" style="color:#fbbf24;">⚙️ Admin Settings</div>
+            <div class="nav-link" onclick="toggleTheme()">🌙 Dark Mode</div>
+            <div class="nav-link" onclick="lockSystem()" style="color:#fca5a5;">🔒 Lock System</div>
+        </div>
+    </div>
+</div>
+
+<!-- 🖥️ MAIN CONTENT -->
+<div class="main-content">
+
+    <!-- DASHBOARD -->
+    <div id="dashboardSection" class="page-section active">
+
+        <!-- Firebase Setup Guide (shows when not configured) -->
+        <div id="fbSetupGuide">
+            <h3>🔥 Firebase Setup Guide — Cloud Storage Activate Karo</h3>
+            <p style="font-size:13px;color:#9ca3af;margin-top:0;">One-time setup only. After this, data can be accessed from any device.</p>
+            <div class="setup-step"><div class="step-num">1</div><div class="step-text"><strong>Open Firebase Console:</strong> Go to <code>console.firebase.google.com</code> → Sign in with Google account → Click "Create a project" → Project name: <code>UMS-Nawada-Katkamdag</code></div></div>
+            <div class="setup-step"><div class="step-num">2</div><div class="step-text"><strong>Enable Realtime Database:</strong> Left sidebar → "Build" → "Realtime Database" → "Create Database" → Region: <code>Asia Southeast</code> → Select "Start in test mode"</div></div>
+            <div class="setup-step"><div class="step-num">3</div><div class="step-text"><strong>Enable Authentication:</strong> "Build" → "Authentication" → "Get started" → "Sign-in method" tab → Enable "Email/Password"</div></div>
+            <div class="setup-step"><div class="step-num">4</div><div class="step-text"><strong>Create Admin User:</strong> Authentication → "Users" tab → "Add user" → Email: <code>admin@umsnawada.edu</code> → Password: <code>1234</code> (can be changed later from Admin Settings)</div></div>
+            <div class="setup-step"><div class="step-num">5</div><div class="step-text"><strong>Register Web App:</strong> Project Settings (⚙️) → "Your apps" → "&lt;/&gt;" icon → App nickname: <code>UMS Admin</code> → Register → Copy the config code</div></div>
+            <div class="setup-step"><div class="step-num">6</div><div class="step-text"><strong>Paste Config in this file:</strong> Open this HTML file in Notepad/VS Code → Find the <code>firebaseConfig</code> section → Paste your copied config there → Save the file → Refresh in browser ✅</div></div>
+        </div>
+
+        <div class="school-header">
+            <h1>🏫 UMS NAWADA KATKAMDAG</h1>
+            <p>Professional Student Management System</p>
+            <span class="udise-tag">📋 UDISE: 20042103103 | Katkamdag, Hazaribagh, Jharkhand</span>
+        </div>
+
+        <div class="dash-title"><h2>📈 Student Overview</h2><div class="tline"></div></div>
+        <div id="dashboardStats"></div>
+
+        <div class="dash-title" style="margin-top:30px;"><h2>📊 School Analytics</h2><div class="tline"></div></div>
+        <div class="charts-container">
+            <div class="box"><canvas id="genderChart"></canvas></div>
+            <div class="box"><canvas id="classChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ADD STUDENT FORM -->
+    <div id="addStudentSection" class="page-section">
+        <div class="box">
+            <h2 id="formTitle" style="margin-top:0;color:var(--primary);border-bottom:2px solid var(--border-color);padding-bottom:10px;">➕ Add New Student Record</h2>
+            <form id="studentForm" onsubmit="saveStudent(event)">
+                <input type="hidden" id="editIndex" value="-1">
+                <input type="hidden" id="PHOTO_BASE64" value="">
+                <div class="form-grid">
+                    <!-- Academic -->
+                    <h4 class="form-section-title">📚 Academic Details</h4>
+                    <div class="input-group"><label>Student ID (ST_ID) * <span style="font-size:11px;color:#ef4444;">To be filled manually by Admin</span></label><input type="number" id="ST_ID" required placeholder="Enter Student ID manually" style="border:2px solid var(--primary);"></div>
+                    <div class="input-group"><label>Academic Session *</label>
+                        <select id="SESSION" required></select>
+                    </div>
+                    <div class="input-group"><label>Admission No * (Numbers Only)</label><input type="text" id="ADMISSION_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required></div>
+                    <div class="input-group"><label>Date of Admission *</label><input type="date" id="D_O_A" required></div>
+                    <div class="input-group"><label>Class *</label>
+                        <select id="CLASS" required>
+                            <option value="" disabled selected>Select Class...</option>
+                            <option value="Pre-Primary">Pre-Primary</option>
+                            <option value="Class 1">Class 1</option><option value="Class 2">Class 2</option>
+                            <option value="Class 3">Class 3</option><option value="Class 4">Class 4</option>
+                            <option value="Class 5">Class 5</option><option value="Class 6">Class 6</option>
+                            <option value="Class 7">Class 7</option><option value="Class 8">Class 8</option>
+                        </select>
+                    </div>
+                    <div class="input-group"><label>School Name</label><input type="text" id="SCHOOL_NAME" value="UMS NAWADA KATKAMDAG" readonly></div>
+
+
+                    <!-- Personal -->
+                    <h4 class="form-section-title">👤 Personal Details</h4>
+                    <div class="input-group"><label>Student Full Name * (String Only)</label><input type="text" id="NAME_OF_STUDENT" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Father Name * (String Only)</label><input type="text" id="FATHER_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Mother Name * (String Only)</label><input type="text" id="MOTHER_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Date of Birth *</label><input type="date" id="D_O_B" required></div>
+                    <div class="input-group"><label>Gender *</label>
+                        <select id="GENDER" required><option value="MALE">Male</option><option value="FEMALE">Female</option></select>
+                    </div>
+                    <div class="input-group"><label>Category *</label>
+                        <select id="CATEGORY" required>
+                            <option value="GENERAL">General</option><option value="OBC">OBC</option>
+                            <option value="SC">SC</option><option value="ST">ST</option>
+                        </select>
+                    </div>
+
+                    <!-- ♿ Disability -->
+                    <h4 class="form-section-title" style="color:#7c3aed;">♿ Disability Information</h4>
+                    <div class="input-group"><label>Disability Status *</label>
+                        <select id="DISABILITY" required onchange="toggleDisabilityField()">
+                            <option value="NO">✅ No Disability</option>
+                            <option value="YES">♿ Has Disability (Divyang)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="disabilityTypeGroup" style="display:none;"><label>Disability Type *</label><input type="text" id="DISABILITY_TYPE" placeholder="e.g. Visual, Hearing, Physical..."></div>
+                    <div class="input-group" id="disabilityPercentGroup" style="display:none;"><label>Disability Percentage (%)</label><input type="text" id="DISABILITY_PERCENT" placeholder="e.g. 40%" oninput="this.value=this.value.replace(/[^0-9%]/g,'')"></div>
+
+                    <!-- Address -->
+                    <h4 class="form-section-title">🏠 Full Address</h4>
+                    <div class="input-group"><label>Village *</label><input type="text" id="VILLAGE" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Post *</label><input type="text" id="POST" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Block *</label><input type="text" id="BLOCK" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>District *</label><input type="text" id="DISTRICT" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Pincode * (6 Digits)</label><input type="text" id="PINCODE" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="6" minlength="6" required></div>
+
+                    <!-- Contact -->
+                    <h4 class="form-section-title">📞 Contact & Identity</h4>
+                    <div class="input-group"><label>Aadhar No * (12 Digits)</label><input type="text" id="AADHAR_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="12" minlength="12" required></div>
+                    <div class="input-group"><label>Mobile No * (10 Digits)</label><input type="text" id="MOBILE_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="10" minlength="10" required></div>
+                    <div class="input-group">
+                        <label>Upload Photo (Optional)</label>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <img id="photoPreview" src="https://via.placeholder.com/50?text=No+Img" class="table-thumb" style="margin:0;">
+                            <input type="file" id="STUDENT_PHOTO" accept="image/*" onchange="compressImage(event)" style="flex:1;padding:8px;">
+                        </div>
+                    </div>
+
+                    <!-- 🏦 Bank Details -->
+                    <h4 class="form-section-title" style="color:#d97706;">🏦 Bank Details</h4>
+                    <div class="input-group" style="grid-column:1/-1;">
+                        <label>Account Holder Type *</label>
+                        <select id="BANK_HOLDER_TYPE" required onchange="toggleBankHolderFields()" style="border:2px solid #f59e0b;">
+                            <option value="STUDENT">👦 Student's Own Bank Account</option>
+                            <option value="GUARDIAN">👨‍👩‍👧 Guardian / Parent Bank Account</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="guardianBankNameGroup" style="display:none;"><label>Guardian / Parent Name *</label><input type="text" id="BANK_GUARDIAN_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" placeholder="Guardian whose account is being used"></div>
+                    <div class="input-group" id="guardianRelationGroup" style="display:none;"><label>Relation with Student *</label>
+                        <select id="BANK_GUARDIAN_RELATION">
+                            <option value="FATHER">Father</option><option value="MOTHER">Mother</option>
+                            <option value="GRANDFATHER">Grandfather</option><option value="GRANDMOTHER">Grandmother</option>
+                            <option value="UNCLE">Uncle</option><option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="guardianAadharGroup" style="display:none;">
+                        <label>Guardian Aadhar No * (12 Digits)</label>
+                        <input type="text" id="BANK_GUARDIAN_AADHAR" 
+                            oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="12" placeholder="Guardian's 12-digit Aadhar Number" style="border:2px solid #f59e0b;">
+                    </div>
+                    <div class="input-group"><label>Bank Account No * (Numbers)</label><input type="text" id="BANK_ACC_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required></div>
+                    <div class="input-group"><label>IFSC Code *</label><input type="text" id="IFSC_CODE" oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()" required></div>
+                    <div class="input-group"><label>Bank Branch & Address *</label><input type="text" id="BANK_BRANCH" oninput="this.value=this.value.replace(/[^A-Za-z0-9\s,.-]/g,'')" required></div>
+
+                    <!-- Gov IDs -->
+                    <h4 class="form-section-title">🆔 Government IDs</h4>
+                    <div class="input-group"><label>AAPAR ID No </label><input type="text" id="AAPAR_ID" oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()" placeholder="Enter AAPAR ID"></div>
+                    <div class="input-group"><label>PEN ID No </label><input type="text" id="PEN_ID" oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()" placeholder="Enter PEN ID"></div>
+                    <div class="input-group"><label>E-Vidya Vahini ID </label><input type="text" id="EVIDYA_ID" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Enter PEN ID"></div>
+
+                    <button type="submit" id="submitBtn" class="btn-submit">💾 Save Student Record</button>
+                    <button type="button" id="cancelEditBtn" onclick="resetFormMode()" style="display:none;grid-column:1/-1;padding:12px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:5px;">❌ Cancel Editing</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ACTIVE DATABASE -->
+    <div id="databaseSection" class="page-section">
+        <div class="box">
+            <h2 style="margin-top:0;color:var(--primary);">📋 Active Student Database</h2>
+            <div class="tools-bar">
+                <div class="search-group">
+                    <select id="sessionFilter" onchange="filterData()"></select>
+                    <select id="classFilter" onchange="filterData()">
+                        <option value="ALL">🏫 All Classes</option>
+                        <option value="Pre-Primary">Pre-Primary</option>
+                        <option value="Class 1">Class 1</option><option value="Class 2">Class 2</option>
+                        <option value="Class 3">Class 3</option><option value="Class 4">Class 4</option>
+                        <option value="Class 5">Class 5</option><option value="Class 6">Class 6</option>
+                        <option value="Class 7">Class 7</option><option value="Class 8">Class 8</option>
+                    </select>
+                    <select id="genderFilter" onchange="filterData()">
+                        <option value="ALL">⚧ All Boys & Girls</option>
+                        <option value="MALE">👦 Only Boys</option>
+                        <option value="FEMALE">👧 Only Girls</option>
+                    </select>
+                    <select id="disabilityFilter" onchange="filterData()" style="border:2px solid #8b5cf6;">
+                        <option value="ALL">♿ All Students</option>
+                        <option value="YES">♿ Divyang Students</option>
+                        <option value="NO">✅ No Disability</option>
+                    </select>
+                    <select id="bankHolderFilter" onchange="filterData()" style="border:2px solid #f59e0b;">
+                        <option value="ALL">🏦 All Accounts</option>
+                        <option value="STUDENT">👦 Own Account</option>
+                        <option value="GUARDIAN">👨‍👩‍👧 Guardian Account</option>
+                    </select>
+                    <select id="categoryFilter" onchange="filterData()" style="border:2px solid #10b981;">
+                        <option value="ALL">📂 All Categories</option>
+                        <option value="GENERAL">General</option>
+                        <option value="OBC">OBC</option>
+                        <option value="SC">SC</option>
+                        <option value="ST">ST</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search name, aadhar, mobile, village, father name..." onkeyup="filterData()" style="flex:1;">
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-action btn-export" onclick="exportToCSV()">📊 Export CSV</button>
+                    <button class="btn-action" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="backupJSON()">💾 Backup</button>
+                    <label class="btn-action" style="background:linear-gradient(135deg,#f59e0b,#d97706);cursor:pointer;margin:0;">
+                        📂 Restore <input type="file" style="display:none;" accept=".json" onchange="restoreJSON(event)">
+                    </label>
+                    <button class="btn-action btn-print" onclick="printDataMode('print-table-mode')">🖨️ Print</button>
+                </div>
+            </div>
+            <div id="dbStatsBar" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:15px;font-size:13px;font-weight:700;padding:10px 15px;background:rgba(59,130,246,0.05);border-radius:8px;border:1px solid rgba(59,130,246,0.12);"></div>
+            <div style="overflow-x:auto;">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Photo</th><th>Student Name</th><th>Session / Class</th>
+                            <th>Status</th><th>Aadhar / Mobile</th><th>Bank Account</th><th>Action Panel</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALUMNI -->
+    <div id="alumniSection" class="page-section">
+        <div class="box">
+            <h2 style="margin-top:0;color:#8b5cf6;">🎓 Passout / Alumni Database</h2>
+            <p style="font-size:13px;color:#666;margin-bottom:18px;">Class 8 passout students record securely stored here.</p>
+            <div class="alumni-stats-box" id="alumniSessionStats"><span>📊 Loading...</span></div>
+            <div class="tools-bar">
+                <div class="search-group">
+                    <select id="alumniSessionFilter" onchange="filterAlumniData()"></select>
+                    <input type="text" id="alumniYearFilter" placeholder="Filter by Pass Year (e.g. 2026)" onkeyup="filterAlumniData()" style="width:200px;">
+                    <select id="alumniGenderFilter" onchange="filterAlumniData()">
+                        <option value="ALL">⚧ All</option><option value="MALE">👦 Boys</option><option value="FEMALE">👧 Girls</option>
+                    </select>
+                </div>
+                <div><button class="btn-action btn-print" onclick="printDataMode('print-alumni-mode')">🖨️ Print Alumni</button></div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="alumniTable">
+                    <thead>
+                        <tr><th>Photo</th><th>Student Name</th><th>Session & Year</th><th>Gender</th><th>Aadhar</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="alumniTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLASS PROMOTION SECTION -->
+    <div id="promotionSection" class="page-section">
+        <div class="box">
+            <h2 style="margin-top:0;color:#10b981;border-bottom:2px solid var(--border-color);padding-bottom:10px;">📈 Class Promotion System</h2>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:20px;">Promote all students of a class to the next class. Class 8 students will be automatically moved to the Alumni section.</p>
+
+            <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:20px;margin-bottom:20px;">
+                <h3 style="margin:0 0 15px;color:#059669;font-size:16px;">🎯 Promote Students</h3>
+                <div style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>Current Session *</label>
+                        <select id="promoFromSession" style="border:2px solid #10b981;"></select>
+                    </div>
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>Select Class to Promote *</label>
+                        <select id="promoClass" style="border:2px solid #10b981;" onchange="previewPromotion()">
+                            <option value="">-- Select Class --</option>
+                            <option value="Pre-Primary">Pre-Primary → Class 1</option>
+                            <option value="Class 1">Class 1 → Class 2</option>
+                            <option value="Class 2">Class 2 → Class 3</option>
+                            <option value="Class 3">Class 3 → Class 4</option>
+                            <option value="Class 4">Class 4 → Class 5</option>
+                            <option value="Class 5">Class 5 → Class 6</option>
+                            <option value="Class 6">Class 6 → Class 7</option>
+                            <option value="Class 7">Class 7 → Class 8</option>
+                            <option value="Class 8">Class 8 → 🎓 Alumni (Passout)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>New Session *</label>
+                        <select id="promoToSession" style="border:2px solid #10b981;"></select>
+                    </div>
+                    <div class="input-group" id="passYearGroup" style="flex:1;min-width:200px;display:none;">
+                        <label>Pass Year (for Alumni) *</label>
+                        <input type="text" id="promoPassYear" placeholder="e.g. 2025" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Table -->
+            <div id="promoPreviewBox" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+                    <div id="promoPreviewTitle" style="font-size:15px;font-weight:700;color:var(--primary);"></div>
+                    <button onclick="executePromotion()" style="padding:12px 25px;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:15px;box-shadow:0 4px 15px rgba(16,185,129,0.3);">
+                        ✅ Confirm & Promote All
+                    </button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="promoPreviewTable">
+                        <thead>
+                            <tr><th>#</th><th>Photo</th><th>Student Name</th><th>Current Class</th><th>Will Be Promoted To</th><th>Aadhar</th></tr>
+                        </thead>
+                        <tbody id="promoPreviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="promoEmptyMsg" style="display:none;text-align:center;padding:30px;color:#9ca3af;font-size:15px;">
+                ⚠️ No students found in this class for the selected session.
+            </div>
+
+            <!-- Promotion History -->
+            <div style="margin-top:25px;">
+                <h3 style="color:var(--primary);border-bottom:2px solid var(--border-color);padding-bottom:8px;">📜 Recent Promotion History</h3>
+                <div id="promoHistory" style="font-size:13px;color:#6b7280;">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚙️ ADMIN SETTINGS SECTION -->
+    <div id="adminSettingsSection" class="page-section">
+        <div class="box">
+            <h2 style="margin-top:0;color:var(--primary);border-bottom:2px solid var(--border-color);padding-bottom:10px;">⚙️ Admin Settings</h2>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:25px;">Change your Login ID and Password from here. Changes will be saved immediately.</p>
+
+            <!-- Current Credentials Info -->
+            <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:18px;margin-bottom:25px;">
+                <h3 style="margin:0 0 10px;color:var(--primary);font-size:15px;">📋 Current Login Info</h3>
+                <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:14px;">
+                    <div>🆔 <strong>Login ID:</strong> <span id="currentLoginIdDisplay" style="color:var(--secondary);font-weight:700;">Loading...</span></div>
+                    <div>📧 <strong>Firebase Email:</strong> <span id="currentEmailDisplay" style="color:#6b7280;">Loading...</span></div>
+                </div>
+            </div>
+
+            <!-- Change Login ID -->
+            <div style="background:var(--box-bg);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:20px;">
+                <h3 style="margin:0 0 15px;color:#f59e0b;font-size:16px;">🆔 Change Login ID</h3>
+                <p style="font-size:12px;color:#9ca3af;margin:0 0 15px;">This is the ID that you type on the login screen.</p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>Create New Login ID *</label>
+                        <input type="text" id="newLoginId" placeholder="e.g. principal2025" 
+                            oninput="this.value=this.value.replace(/[^A-Za-z0-9_]/g,'')"
+                            style="border:2px solid #f59e0b;">
+                    </div>
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>Confirm Current Password *</label>
+                        <input type="password" id="confirmPwdForId" placeholder="Enter current password"
+                            style="border:2px solid #f59e0b;">
+                    </div>
+                    <button onclick="changeLoginId()" style="padding:12px 20px;background:linear-gradient(135deg,#f59e0b,#d97706);color:black;border:none;border-radius:8px;cursor:pointer;font-weight:bold;white-space:nowrap;">
+                        🔄 Update Login ID
+                    </button>
+                </div>
+            </div>
+
+            <!-- Change Password -->
+            <div style="background:var(--box-bg);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:20px;">
+                <h3 style="margin:0 0 15px;color:#ef4444;font-size:16px;">🔑 Change Current Password</h3>
+                <p style="font-size:12px;color:#9ca3af;margin:0 0 15px;">Your Firebase Authentication password will be updated — use the new password for future logins.</p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>Current Password *</label>
+                        <input type="password" id="currentPwd" placeholder="Current password"
+                            style="border:2px solid #ef4444;">
+                    </div>
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>New Password * (min 6 characters)</label>
+                        <input type="password" id="newPwd" placeholder="New password"
+                            style="border:2px solid #ef4444;">
+                    </div>
+                    <div class="input-group" style="flex:1;min-width:200px;">
+                        <label>Confirm New Password *</label>
+                        <input type="password" id="confirmNewPwd" placeholder="Re-enter new password"
+                            style="border:2px solid #ef4444;">
+                    </div>
+                    <button onclick="changePassword()" style="padding:12px 20px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;white-space:nowrap;">
+                        🔐 Update Password
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recovery Email Setup -->
+            <div style="background:var(--box-bg);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:20px;">
+                <h3 style="margin:0 0 8px;color:#3b82f6;font-size:16px;">📧 Recovery Email Setup</h3>
+                <p style="font-size:12px;color:#9ca3af;margin:0 0 15px;">Set your personal email here. It will be used if you forget your password. Use your personal Gmail or any real email you can access.</p>
+                <div style="background:rgba(59,130,246,0.06);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;">
+                    💾 <strong>Current Recovery Email:</strong> <span id="currentRecoveryEmail" style="color:var(--secondary);">Not set</span>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="input-group" style="flex:2;min-width:200px;">
+                        <label>Your Personal Email *</label>
+                        <input type="email" id="newRecoveryEmail" placeholder="e.g. yourname@gmail.com" style="border:2px solid #3b82f6;">
+                    </div>
+                    <div class="input-group" style="flex:1;min-width:180px;">
+                        <label>Current Password (to confirm) *</label>
+                        <input type="password" id="recoveryEmailPwd" placeholder="Current password" style="border:2px solid #3b82f6;">
+                    </div>
+                    <button onclick="saveRecoveryEmail()" style="padding:12px 18px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;white-space:nowrap;">
+                        💾 Save Recovery Email
+                    </button>
+                </div>
+            </div>
+
+            <!-- Important Note -->
+            <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px;">
+                <h3 style="margin:0 0 8px;color:#ef4444;font-size:15px;">⚠️ Important Notes</h3>
+                <p style="font-size:13px;color:#6b7280;margin:0;line-height:1.6;">
+                    • After changing the password, <strong>the system will automatically log out</strong>.<br>
+                    • Password must be at least <strong>6 characters</strong> long.<br>
+                    • <strong>Always keep your Recovery Email updated</strong> — it is needed if you forget your password.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /main-content -->
+
+<!-- PRINT-ONLY ID CARD CONTAINER (hidden normally, shown only when printing ID) -->
+<div id="printIdContainer" style="display:none;">
+    <div id="printIdCard" style="width:54mm;height:86mm;margin:10mm auto;background:white;border:1px solid black;overflow:hidden;font-family:Arial,sans-serif;position:relative;box-sizing:border-box;">
+        <div style="background:#1e3a8a;color:white;text-align:center;padding:4px;">
+            <h3 style="margin:0;font-size:10px;letter-spacing:0.5px;">UMS NAWADA KATKAMDAG</h3>
+            <p style="margin:2px 0 0;font-size:8px;color:#fbbf24;font-weight:bold;">UDISE: 20042103103</p>
+        </div>
+        <div id="picPhotoArea" style="width:22mm;height:28mm;background:#e5e7eb;margin:4px auto 2px;border:2px solid #1e3a8a;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:8px;overflow:hidden;"></div>
+        <div style="padding:2px 6px;text-align:center;color:black;">
+            <div id="picName" style="font-size:11px;font-weight:bold;color:#1e3a8a;margin-bottom:2px;text-transform:uppercase;"></div>
+            <div id="picClass" style="font-size:9px;font-weight:bold;color:#ef4444;margin-bottom:4px;"></div>
+            <div style="font-size:8px;text-align:left;line-height:1.4;">
+                <span style="color:#1e3a8a;display:inline-block;width:16mm;font-weight:bold;">Aadhar:</span><span id="picAadhar"></span><br>
+                <span style="color:#1e3a8a;display:inline-block;width:16mm;font-weight:bold;">Category:</span><span id="picCat"></span><br>
+                <span style="color:#1e3a8a;display:inline-block;width:16mm;font-weight:bold;">F. Name:</span><span id="picFName"></span><br>
+                <span style="color:#1e3a8a;display:inline-block;width:16mm;font-weight:bold;">Gender:</span><span id="picGen"></span><br>
+                <span style="color:#1e3a8a;display:inline-block;width:16mm;font-weight:bold;">D.O.B:</span><span id="picDob"></span><br>
+                <span style="color:#1e3a8a;display:inline-block;width:16mm;font-weight:bold;">Mobile:</span><span id="picMob"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotPwdModal" class="modal">
+    <div class="modal-content" style="max-width:480px;">
+        <h3 style="margin-top:0;color:var(--primary);border-bottom:2px solid var(--border-color);padding-bottom:10px;">🔑 Password Recovery</h3>
+
+        <!-- Step 1: Enter recovery email -->
+        <div id="fpStep1">
+            <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:10px;padding:15px;margin-bottom:18px;">
+                <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:var(--primary);">📋 How it works:</p>
+                <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+                    1. Enter your <strong>Login ID</strong> and your <strong>personal email address</strong><br>
+                    2. A password reset link will be sent to that email<br>
+                    3. Click the link and set a new password<br>
+                    4. Return here and login with your new password
+                </p>
+            </div>
+            <div class="input-group" style="margin-bottom:14px;">
+                <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block;">Login ID *</label>
+                <input type="text" id="fpLoginId" placeholder="Enter your Login ID" 
+                    style="width:100%;padding:12px;border:1.5px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text-color);box-sizing:border-box;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label style="font-size:13px;font-weight:600;margin-bottom:6px;display:block;">Your Personal Email Address *</label>
+                <input type="email" id="fpUserEmail" placeholder="e.g. yourname@gmail.com" 
+                    style="width:100%;padding:12px;border:1.5px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text-color);box-sizing:border-box;">
+                <span style="font-size:11px;color:#9ca3af;margin-top:4px;display:block;">⚠️ This must be the email you saved in Admin Settings → Recovery Email</span>
+            </div>
+            <div id="fpMsg" style="display:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;margin-bottom:15px;"></div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="sendPasswordReset()" style="flex:1;padding:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:15px;">
+                    📨 Send Reset Link
+                </button>
+                <button onclick="closeModal('forgotPwdModal')" style="flex:1;padding:12px;background:#6b7280;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">
+                    ✖ Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Success -->
+        <div id="fpStep2" style="display:none;text-align:center;padding:20px 0;">
+            <div style="font-size:60px;margin-bottom:15px;">📨</div>
+            <h3 style="color:#10b981;margin:0 0 10px;">Reset Link Sent!</h3>
+            <p style="font-size:14px;color:#6b7280;margin-bottom:5px;">Password reset link sent to:</p>
+            <p style="font-size:16px;font-weight:700;color:var(--secondary);" id="fpEmailSentTo"></p>
+            <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:12px;margin-top:15px;text-align:left;">
+                <p style="margin:0;font-size:13px;color:#059669;font-weight:600;">Next Steps:</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#6b7280;line-height:1.5;">
+                    1. Open your email inbox<br>
+                    2. Find the email from Firebase (check spam folder too)<br>
+                    3. Click "Reset Password" link in the email<br>
+                    4. Set your new password<br>
+                    5. Come back here and login with new password
+                </p>
+            </div>
+            <button onclick="closeModal('forgotPwdModal')" style="margin-top:20px;padding:12px 30px;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:15px;">
+                ✅ Done
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <div id="normalProfileView">
+            <h3 style="text-align:center;border-bottom:2px solid var(--border-color);padding-bottom:10px;color:var(--primary);">Student Profile Detail</h3>
+            <div style="text-align:center;margin-bottom:15px;"><img id="viewProfilePhoto" src="" style="width:100px;height:120px;object-fit:cover;border-radius:8px;border:3px solid var(--primary);display:none;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px;margin-bottom:20px;background:rgba(0,0,0,0.02);padding:15px;border-radius:8px;border:1px solid var(--border-color);" id="modalData"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button style="flex:1;padding:12px;border:none;border-radius:6px;cursor:pointer;color:white;font-weight:bold;background:#3b82f6;" onclick="showIDCard()">🪪 Show ID Card</button>
+                <button style="flex:1;padding:12px;border:none;border-radius:6px;cursor:pointer;color:white;font-weight:bold;background:#10b981;" onclick="printProfile()">🖨️ Print Full Form</button>
+                <button style="flex:1;padding:12px;border:none;border-radius:6px;cursor:pointer;color:white;font-weight:bold;background:#343a40;" onclick="closeModal('viewModal')">❌ Close</button>
+            </div>
+        </div>
+        <div id="idCardView" style="display:none;text-align:center;">
+            <div class="id-card-wrapper" id="generatedIdCard">
+                <div class="id-header"><h3>UMS NAWADA KATKAMDAG</h3><p>UDISE: 20042103103</p></div>
+                <div class="id-photo" id="idPhotoArea">Paste Photo</div>
+                <div class="id-body">
+                    <div class="id-name" id="idName">STUDENT NAME</div>
+                    <div class="id-class" id="idClass">Class</div>
+                    <div class="id-details">
+                        <strong>Aadhar:</strong> <span id="idAadhar"></span><br>
+                        <strong>Category:</strong> <span id="idCat"></span><br>
+                        <strong>F. Name:</strong> <span id="idFName"></span><br>
+                        <strong>Gender:</strong> <span id="idGen"></span><br>
+                        <strong>D.O.B:</strong> <span id="idDob"></span><br>
+                        <strong>Mobile:</strong> <span id="idMob"></span>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button style="flex:1;padding:10px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#0ea5e9;" onclick="downloadIDCardPDF()">📥 Download PDF</button>
+                <button style="flex:1;padding:10px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#10b981;" onclick="printIDCard()">🖨️ Print ID</button>
+                <button style="flex:1;padding:10px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#6b7280;" onclick="hideIDCard()">⬅️ Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REPORT CARD MODAL -->
+<div id="reportCardModal" class="modal">
+    <div class="modal-content modal-large">
+        <div id="marksEntrySection">
+            <h3 style="margin-top:0;color:#0ea5e9;border-bottom:2px solid var(--border-color);padding-bottom:10px;">📝 Enter Marks (Out of 100)</h3>
+            <p style="font-size:14px;font-weight:bold;color:var(--primary);" id="rcStudentNameLabel">Student: -</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px;">
+                <div class="input-group"><label>Hindi</label><input type="number" id="markHin" max="100" min="0" placeholder="0 - 100"></div>
+                <div class="input-group"><label>English</label><input type="number" id="markEng" max="100" min="0" placeholder="0 - 100"></div>
+                <div class="input-group"><label>Mathematics</label><input type="number" id="markMat" max="100" min="0" placeholder="0 - 100"></div>
+                <div class="input-group"><label>Science / EVS</label><input type="number" id="markSci" max="100" min="0" placeholder="0 - 100"></div>
+                <div class="input-group"><label>Social Science</label><input type="number" id="markSst" max="100" min="0" placeholder="0 - 100"></div>
+                <div class="input-group"><label>Sanskrit / Urdu <span style="font-size:11px;color:#9ca3af;">(Optional)</span></label><input type="number" id="markSan" max="100" min="0" placeholder="0 - 100"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button style="flex:1;padding:12px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#10b981;" onclick="saveAndGenerateReport()">📊 Generate Result</button>
+                <button style="flex:1;padding:12px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#6b7280;" onclick="closeModal('reportCardModal')">❌ Cancel</button>
+            </div>
+        </div>
+        <div id="printableReportSection" style="display:none;">
+            <div class="report-card-wrapper" id="generatedReportCard">
+                <div class="rc-header">
+                    <h2>UMS NAWADA KATKAMDAG</h2>
+                    <p>Hazaribagh, Jharkhand | U-DISE Code: 20042103103</p>
+                    <div style="margin-top:15px;"><span class="rc-title">ANNUAL PROGRESS REPORT</span></div>
+                </div>
+                <div class="rc-student-info">
+                    <div><strong>Student Name:</strong> <span id="rcName"></span></div>
+                    <div><strong>Class:</strong> <span id="rcClass"></span></div>
+                    <div><strong>Father's Name:</strong> <span id="rcFName"></span></div>
+                    <div><strong>Admission No:</strong> <span id="rcAdm"></span></div>
+                    <div><strong>Session:</strong> <span id="rcSes"></span></div>
+                    <div><strong>Date of Birth:</strong> <span id="rcDob"></span></div>
+                </div>
+                <table class="rc-table">
+                    <thead><tr><th>Subject</th><th>Max Marks</th><th>Marks Obtained</th></tr></thead>
+                    <tbody>
+                        <tr><td>Hindi</td><td>100</td><td id="tdHin"></td></tr>
+                        <tr><td>English</td><td>100</td><td id="tdEng"></td></tr>
+                        <tr><td>Mathematics</td><td>100</td><td id="tdMat"></td></tr>
+                        <tr><td>Science / EVS</td><td>100</td><td id="tdSci"></td></tr>
+                        <tr><td>Social Science</td><td>100</td><td id="tdSst"></td></tr>
+                        <tr><td>Sanskrit / Urdu</td><td>100</td><td id="tdSan"></td></tr>
+                    </tbody>
+                </table>
+                <div class="rc-summary">
+                    <div>Grand Total: <span id="rcTotal"></span> / <span id="rcMaxTotal">500</span></div>
+                    <div>Percentage: <span id="rcPercent"></span>%</div>
+                    <div>Grade: <span id="rcGrade" style="color:#1e3a8a;font-size:18px;"></span></div>
+                </div>
+                <div class="rc-signatures">
+                    <div>Class Teacher</div><div>Principal</div><div>Parents</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button style="flex:1;padding:12px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#3b82f6;" onclick="printDataMode('print-report-mode')">🖨️ Print Marksheet</button>
+                <button style="flex:1;padding:12px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#f59e0b;" onclick="editMarksAgain()">✏️ Edit Marks</button>
+                <button style="flex:1;padding:12px;border:none;border-radius:5px;cursor:pointer;color:white;font-weight:bold;background:#6b7280;" onclick="closeModal('reportCardModal')">❌ Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BIRTHDAY MODAL -->
+<div id="bdayModal" class="modal">
+    <div class="modal-content bday-special-box" style="padding:0;">
+        <div style="padding:30px;">
+            <h2>🎂 Happy Birthday! 🎉</h2>
+            <p style="font-size:16px;font-weight:bold;color:#555;">Today is a special day for our students!</p>
+            <div id="bdayContent" style="text-align:left;margin:20px 0;max-height:250px;overflow-y:auto;"></div>
+        </div>
+        <button onclick="closeBirthdayModal()" style="width:100%;padding:15px;background:#d63384;color:white;border:none;border-radius:0 0 15px 15px;font-weight:bold;font-size:18px;cursor:pointer;">Let's Celebrate! 🎈</button>
+    </div>
+</div>
+
+<script>
+// ================================================================
+// 🔥 FIREBASE CONFIGURATION — APNA CONFIG YAHAN PASTE KAREIN
+// ================================================================
+// Steps:
+// 1. console.firebase.google.com par jao
+// 2. New project banao → Realtime Database enable karo
+// 3. Authentication > Email/Password enable karo
+// 4. User banao: admin@umsnawada.edu / 1234
+// 5. Project Settings > Web App > Config copy karo
+// 6. Niche apna config paste karo
+// ================================================================
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDt_eCl_Fa-icnVTA775MqEl2BokoEDjFI",
+    authDomain: "upg-ms-nawada-katkamdag.firebaseapp.com",
+    databaseURL: "https://upg-ms-nawada-katkamdag-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "upg-ms-nawada-katkamdag",
+    storageBucket: "upg-ms-nawada-katkamdag.firebasestorage.app",
+    messagingSenderId: "640928773534",
+    appId: "1:640928773534:web:d90e2a6160ae90ef9b528f",
+    measurementId: "G-BYHL4CZMVC"
+};
+
+// ================================================================
+// ⚙️ ADMIN CONFIG — Firebase Auth mein bhi same email use karo
+// ================================================================
+// Admin credentials — Firebase DB se load honge
+// Default values (sirf pehli baar ya demo mode mein use honge)
+let ADMIN_LOGIN_ID = localStorage.getItem('umsAdminLoginId') || 'admin';
+const ADMIN_EMAIL  = "admin@umsnawada.edu"; // Firebase Auth email — cannot be changed
+// PIN = Firebase Auth ka password
+// ================================================================
+
+// Firebase initialize
+const IS_FIREBASE_ON = firebaseConfig.apiKey !== "YOUR_API_KEY_HERE";
+let fbApp, fbAuth, fbDb, studentsRef, alumniRef, adminCfgRef;
+
+if (IS_FIREBASE_ON) {
+    fbApp = firebase.initializeApp(firebaseConfig);
+    fbAuth = firebase.auth();
+    fbDb   = firebase.database();
+    studentsRef  = fbDb.ref('umsNawada/students');
+    alumniRef    = fbDb.ref('umsNawada/alumni');
+    adminCfgRef  = fbDb.ref('umsNawada/adminConfig');
+    
+    // Enable offline persistence — data stays accessible even without internet
+    // Multiple users can access simultaneously via Firebase Realtime DB
+    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+} else {
+    // Demo mode banner
+    document.getElementById('setupBanner').style.display = 'block';
+    document.getElementById('fbSetupGuide').style.display = 'block';
+    document.getElementById('loginModeBadge').innerHTML = '<span class="mode-badge demo">⚡ Demo Mode — Local Storage Only</span>';
+}
+
+// ── CONNECTION STATUS ──────────────────────────────────────────
+if (IS_FIREBASE_ON) {
+    fbDb.ref('.info/connected').on('value', snap => {
+        const connected = snap.val();
+        const badge = document.getElementById('connectionBadge');
+        if (connected) {
+            badge.innerHTML = '🟢 Cloud Connected';
+            badge.style.background = 'rgba(52,211,153,0.15)';
+            badge.style.color = '#34d399';
+        } else {
+            badge.innerHTML = '🔴 Offline — Local Cache';
+            badge.style.background = 'rgba(248,113,113,0.15)';
+            badge.style.color = '#f87171';
+        }
+    });
+} else {
+    const badge = document.getElementById('connectionBadge');
+    badge.innerHTML = '⚡ Demo / Local Mode';
+    badge.style.background = 'rgba(251,191,36,0.15)';
+    badge.style.color = '#fbbf24';
+}
+
+// ── AUTH STATE LISTENER ────────────────────────────────────────
+if (IS_FIREBASE_ON) {
+    fbAuth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            setupRealtimeListeners();
+            setTimeout(() => checkBirthdays(false), 1800);
+        } else {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            if (studentsRef) studentsRef.off();
+            if (alumniRef)   alumniRef.off();
+        }
+    });
+}
+
+// ── REAL-TIME LISTENERS ────────────────────────────────────────
+let firstStudLoad = true;
+
+function setupRealtimeListeners() {
+    showLoader('🔥 Loading Data...', 'Syncing with Firebase...');
+
+    // Load admin config from Firebase
+    adminCfgRef.once('value').then(snap => {
+        const cfg = snap.val();
+        if (cfg && cfg.loginId) {
+            ADMIN_LOGIN_ID = cfg.loginId;
+            localStorage.setItem('umsAdminLoginId', cfg.loginId);
+        } else {
+            // Pehli baar — default save karo
+            adminCfgRef.set({ loginId: ADMIN_LOGIN_ID });
+        }
+        // Update settings display
+        const el = document.getElementById('currentLoginIdDisplay');
+        const em = document.getElementById('currentEmailDisplay');
+        if (el) el.innerText = ADMIN_LOGIN_ID;
+        if (em) em.innerText = ADMIN_EMAIL;
+    }).catch(() => {});
+
+    studentsRef.on('value', snap => {
+        const data = snap.val();
+        students = data ? Object.values(data) : [];
+        students.sort((a, b) => (parseInt(a.ST_ID) || 0) - (parseInt(b.ST_ID) || 0));
+
+        filterData();
+        updateDashboard();
+        setAutoId();
+        // LocalStorage backup
+        try { localStorage.setItem('umsDbAdmin', JSON.stringify(students)); } catch(e) {}
+
+        if (firstStudLoad) {
+            firstStudLoad = false;
+            hideLoader();
+            showToast('✅ Data loaded successfully from Cloud!', 'info');
+            renderPromoHistory();
+        }
+    }, err => {
+        hideLoader();
+        showToast('Firebase error: ' + err.message, 'error');
+        loadFromLocalStorage();
+    });
+
+    alumniRef.on('value', snap => {
+        const data = snap.val();
+        alumniList = data ? Object.values(data) : [];
+        filterAlumniData();
+        try { localStorage.setItem('umsAlumniDb', JSON.stringify(alumniList)); } catch(e) {}
+    });
+}
+
+// ── SAVE FUNCTIONS ─────────────────────────────────────────────
+async function saveStudentsToFirebase() {
+    if (!IS_FIREBASE_ON || !fbAuth.currentUser) {
+        try { localStorage.setItem('umsDbAdmin', JSON.stringify(students)); } catch(e) {}
+        return;
+    }
+    try {
+        const obj = {};
+        students.forEach(s => { obj['ST' + String(s.ST_ID).padStart(6, '0')] = s; });
+        await studentsRef.set(obj);
+        // localStorage backup is updated by the real-time listener automatically
+    } catch (err) {
+        showToast('Save error: ' + err.message, 'error');
+        try { localStorage.setItem('umsDbAdmin', JSON.stringify(students)); } catch(e) {}
+    }
+}
+
+async function saveAlumniToFirebase() {
+    if (!IS_FIREBASE_ON || !fbAuth.currentUser) {
+        try { localStorage.setItem('umsAlumniDb', JSON.stringify(alumniList)); } catch(e) {}
+        return;
+    }
+    try {
+        const obj = {};
+        alumniList.forEach((s, i) => { obj['AL' + String(s.ST_ID || i).padStart(6, '0')] = s; });
+        await alumniRef.set(obj);
+    } catch (err) {
+        showToast('Alumni save error: ' + err.message, 'error');
+        try { localStorage.setItem('umsAlumniDb', JSON.stringify(alumniList)); } catch(e) {}
+    }
+}
+
+// ── LOADER ─────────────────────────────────────────────────────
+function showLoader(msg, sub) {
+    document.getElementById('loadingMsg').innerText = msg || '⏳ Please wait...';
+    document.getElementById('loadingSub').innerText = sub || '';
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+function hideLoader() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+// ── LOCAL STORAGE FALLBACK ─────────────────────────────────────
+function loadFromLocalStorage() {
+    try { const s = localStorage.getItem('umsDbAdmin'); students = s ? JSON.parse(s) : []; } catch(e) { students = []; }
+    try { const a = localStorage.getItem('umsAlumniDb'); alumniList = a ? JSON.parse(a) : []; } catch(e) { alumniList = []; }
+    updateDashboard(); filterData(); filterAlumniData(); setAutoId();
+    showToast('⚡ Offline mode — Local data loaded', 'info');
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────
+async function checkLogin() {
+    const enteredId  = document.getElementById('adminId').value.trim();
+    const enteredPin = document.getElementById('adminPin').value.trim();
+    const msgBox     = document.getElementById('displayMsg');
+    msgBox.className = 'msg-box';
+
+    if (!enteredId || !enteredPin) {
+        msgBox.classList.add('error');
+        msgBox.innerHTML = '⚠️ Please enter both ID and PIN!';
+        return;
+    }
+
+    // ── DEMO MODE (Firebase not configured) ──
+    if (!IS_FIREBASE_ON) {
+        // Demo mode — check against stored loginId and any password
+        if (enteredId === ADMIN_LOGIN_ID) {
+            msgBox.classList.add('success');
+            msgBox.innerHTML = '✅ Demo Mode Login Successful!';
+            setTimeout(() => {
+                document.getElementById('loginOverlay').style.display = 'none';
+                msgBox.style.display = 'none';
+                document.getElementById('adminId').value = '';
+                document.getElementById('adminPin').value = '';
+                loadFromLocalStorage();
+                // Update settings display
+                const eld = document.getElementById('currentLoginIdDisplay');
+                const emd = document.getElementById('currentEmailDisplay');
+                if (eld) eld.innerText = ADMIN_LOGIN_ID;
+                if (emd) emd.innerText = 'Demo Mode';
+                showToast('⚡ Demo Mode Active', 'info');
+                setTimeout(() => checkBirthdays(false), 800);
+            }, 700);
+        } else {
+            msgBox.classList.add('error');
+            msgBox.innerHTML = '❌ Incorrect ID or PIN!';
+        }
+        return;
+    }
+
+    // ── FIREBASE MODE ──
+    if (enteredId !== ADMIN_LOGIN_ID) {
+        msgBox.className = 'msg-box';
+        msgBox.classList.add('error');
+        msgBox.innerHTML = '❌ Incorrect Login ID!';
+        return;
+    }
+    try {
+        msgBox.classList.add('info');
+        msgBox.innerHTML = '🔄 Verifying credentials, please wait...';
+        await fbAuth.signInWithEmailAndPassword(ADMIN_EMAIL, enteredPin);
+        msgBox.innerHTML = '✅ Login Successful! Loading dashboard...';
+        document.getElementById('adminId').value = '';
+        document.getElementById('adminPin').value = '';
+        // onAuthStateChanged handles the rest
+    } catch (err) {
+        msgBox.className = 'msg-box';
+        msgBox.classList.add('error');
+        if (['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(err.code)) {
+            msgBox.innerHTML = '❌ Incorrect ID or PIN!';
+        } else if (err.code === 'auth/too-many-requests') {
+            msgBox.innerHTML = '⚠️ Too many failed attempts. Please try again later.';
+        } else {
+            msgBox.innerHTML = '❌ ' + err.message;
+        }
+        document.getElementById('adminPin').value = '';
+    }
+}
+
+// ── LOCK / LOGOUT ──────────────────────────────────────────────
+async function lockSystem() {
+    if (IS_FIREBASE_ON && fbAuth.currentUser) {
+        await fbAuth.signOut();
+    } else {
+        document.getElementById('loginOverlay').style.display = 'flex';
+    }
+    stopConfetti();
+}
+
+// ── WINDOW ONLOAD (for demo mode initialization) ───────────────
+window.onload = () => {
+    try { if (localStorage.getItem('upgTheme') === 'dark') document.body.setAttribute('data-theme', 'dark'); } catch(e) {}
+    populateSessionDropdowns(); // Auto-generate session years based on current year
+    updateDashboard();
+    filterData();
+    filterAlumniData();
+    setAutoId();
+    // Firebase mode is handled by onAuthStateChanged
+    // Demo mode: data will load after login via loadFromLocalStorage()
+};
+
+// ══════════════════════════════════════════════════════════════
+// ✅ ALL EXISTING FEATURES — UNCHANGED
+// ══════════════════════════════════════════════════════════════
+
+// GLOBAL VARS
+let students = [], alumniList = [];
+let currentViewStudent = null, currentReportIndex = -1, isReportFromAlumni = false;
+let genderChartInstance = null, classChartInstance = null;
+
+// ── CLOCK ──────────────────────────────────────────────────────
+function updateClock() {
+    const now = new Date(); let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+    document.getElementById('liveClock').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}`;
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── CONFETTI ───────────────────────────────────────────────────
+const cvs = document.getElementById('confettiCanvas');
+const cctx = cvs.getContext('2d');
+cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+let particles = [], confettiActive = false;
+function createConfetti() { for(let i=0;i<150;i++) particles.push({x:Math.random()*cvs.width,y:Math.random()*cvs.height-cvs.height,r:Math.random()*6+2,dx:Math.random()*2-1,dy:Math.random()*3+2,color:`hsl(${Math.random()*360},100%,50%)`,tilt:Math.random()*10}); }
+function drawConfetti() { if(!confettiActive)return; cctx.clearRect(0,0,cvs.width,cvs.height); particles.forEach((p,i)=>{p.y+=p.dy;p.x+=p.dx;p.tilt+=0.1;cctx.beginPath();cctx.lineWidth=p.r;cctx.strokeStyle=p.color;cctx.moveTo(p.x+p.tilt+p.r,p.y);cctx.lineTo(p.x+p.tilt,p.y+p.tilt+p.r);cctx.stroke();if(p.y>cvs.height)particles[i].y=-10;}); requestAnimationFrame(drawConfetti); }
+function startConfetti() { cvs.style.display='block'; confettiActive=true; particles=[]; createConfetti(); drawConfetti(); }
+function stopConfetti() { confettiActive=false; cvs.style.display='none'; }
+
+// ── TOAST ──────────────────────────────────────────────────────
+function showToast(message, type='success') {
+    const box = document.getElementById('toastBox');
+    const t = document.createElement('div');
+    t.className = `toast ${type==='error'?'error':type==='info'?'info':''}`;
+    t.innerHTML = type==='error'?`❌ ${message}`:type==='info'?`ℹ️ ${message}`:`✅ ${message}`;
+    box.appendChild(t); setTimeout(()=>t.remove(), 4000);
+}
+
+// ── NAV ────────────────────────────────────────────────────────
+function switchTab(sectionId, el) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    if (el) el.classList.add('active');
+    if (sectionId === 'dashboardSection') updateDashboard();
+    if (sectionId === 'adminSettingsSection') loadAdminSettings();
+}
+
+// ── THEME ──────────────────────────────────────────────────────
+function toggleTheme() {
+    const b = document.body;
+    if (b.getAttribute('data-theme') === 'dark') { b.removeAttribute('data-theme'); localStorage.setItem('upgTheme','light'); }
+    else { b.setAttribute('data-theme','dark'); localStorage.setItem('upgTheme','dark'); }
+}
+
+// ── MODAL ──────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// ── DISABILITY TOGGLE ──────────────────────────────────────────
+function toggleDisabilityField() {
+    const v = document.getElementById('DISABILITY').value;
+    document.getElementById('disabilityTypeGroup').style.display    = v==='YES'?'flex':'none';
+    document.getElementById('disabilityPercentGroup').style.display = v==='YES'?'flex':'none';
+    if (v==='NO') { document.getElementById('DISABILITY_TYPE').value=''; document.getElementById('DISABILITY_PERCENT').value=''; }
+}
+
+// ── BANK HOLDER TOGGLE ─────────────────────────────────────────
+function toggleBankHolderFields() {
+    const v = document.getElementById('BANK_HOLDER_TYPE').value;
+    const isGuardian = v === 'GUARDIAN';
+    document.getElementById('guardianBankNameGroup').style.display  = isGuardian ? 'flex' : 'none';
+    document.getElementById('guardianRelationGroup').style.display  = isGuardian ? 'flex' : 'none';
+    document.getElementById('guardianAadharGroup').style.display    = isGuardian ? 'flex' : 'none';
+    if (!isGuardian) {
+        document.getElementById('BANK_GUARDIAN_NAME').value   = '';
+        document.getElementById('BANK_GUARDIAN_AADHAR').value = '';
+    }
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+function updateDashboard() {
+    const total  = students.length;
+    const boys   = students.filter(s=>s.GENDER==='MALE').length;
+    const girls  = students.filter(s=>s.GENDER==='FEMALE').length;
+    const divyg  = students.filter(s=>s.DISABILITY==='YES').length;
+    const ownAcc = students.filter(s=>!s.BANK_HOLDER_TYPE||s.BANK_HOLDER_TYPE==='STUDENT').length;
+    const guAcc  = students.filter(s=>s.BANK_HOLDER_TYPE==='GUARDIAN').length;
+    const almTot = alumniList.length;
+
+    document.getElementById('dashboardStats').innerHTML = `
+    <div class="dashboard-grid">
+        <div class="stat-card total"><span class="stat-icon">👨‍🎓</span><h3>Total Active Students</h3><h2>${total}</h2><div class="stat-sub">All Classes Combined</div></div>
+        <div class="stat-card boys"><span class="stat-icon">👦</span><h3>Total Boys</h3><h2>${boys}</h2><div class="stat-sub">${total?((boys/total)*100).toFixed(1):0}% of total</div></div>
+        <div class="stat-card girls"><span class="stat-icon">👧</span><h3>Total Girls</h3><h2>${girls}</h2><div class="stat-sub">${total?((girls/total)*100).toFixed(1):0}% of total</div></div>
+        <div class="stat-card disability"><span class="stat-icon">♿</span><h3>Divyang Students</h3><h2>${divyg}</h2><div class="stat-sub">${total?((divyg/total)*100).toFixed(1):0}% of total</div><span class="stat-badge" style="background:rgba(139,92,246,0.15);color:#7c3aed;">Specially Abled</span></div>
+        <div class="stat-card own-acc"><span class="stat-icon">🏦</span><h3>Own Bank Account</h3><h2>${ownAcc}</h2><div class="stat-sub">Student's own account</div><span class="stat-badge" style="background:rgba(16,185,129,0.15);color:#059669;">Self Account</span></div>
+        <div class="stat-card guardian-acc"><span class="stat-icon">👨‍👩‍👧</span><h3>Guardian Account</h3><h2>${guAcc}</h2><div class="stat-sub">Parent/guardian account</div><span class="stat-badge" style="background:rgba(245,158,11,0.15);color:#d97706;">Guardian</span></div>
+        <div class="stat-card alumni-count"><span class="stat-icon">🎓</span><h3>Total Alumni</h3><h2>${almTot}</h2><div class="stat-sub">Class 8 Passout</div></div>
+    </div>`;
+
+    // Gender Pie Chart
+    const g1 = document.getElementById('genderChart').getContext('2d');
+    if (genderChartInstance) genderChartInstance.destroy();
+    genderChartInstance = new Chart(g1, {
+        type:'pie',
+        data:{ labels:['Boys 👦','Girls 👧','Divyang ♿'], datasets:[{ data:[boys,girls,divyg], backgroundColor:['#3b82f6','#ec4899','#8b5cf6'], borderWidth:2, borderColor:'#fff' }] },
+        options:{ responsive:true, plugins:{ title:{display:true,text:'Students Overview Ratio',font:{size:15,weight:'bold'}}, legend:{position:'bottom'} } }
+    });
+
+    // Grouped Bar Chart — Boys & Girls class-wise
+    const classOrder = ['Pre-Primary','Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8'];
+    const cs = {};
+    classOrder.forEach(c => { cs[c] = {boys:0, girls:0}; });
+    students.forEach(s => { if(cs[s.CLASS]) { if(s.GENDER==='MALE') cs[s.CLASS].boys++; else cs[s.CLASS].girls++; } });
+    let activeC = classOrder.filter(c => cs[c].boys>0 || cs[c].girls>0);
+    if (!activeC.length) activeC = ['No Data'];
+    const boysD  = activeC.map(c => cs[c]?cs[c].boys:0);
+    const girlsD = activeC.map(c => cs[c]?cs[c].girls:0);
+
+    const g2 = document.getElementById('classChart').getContext('2d');
+    if (classChartInstance) classChartInstance.destroy();
+    classChartInstance = new Chart(g2, {
+        type:'bar',
+        data:{ labels:activeC, datasets:[
+            { label:'👦 Boys',  data:boysD,  backgroundColor:'rgba(59,130,246,0.85)', borderColor:'#1d4ed8', borderWidth:1, borderRadius:6, borderSkipped:false },
+            { label:'👧 Girls', data:girlsD, backgroundColor:'rgba(236,72,153,0.85)', borderColor:'#be185d', borderWidth:1, borderRadius:6, borderSkipped:false }
+        ]},
+        options:{ responsive:true, plugins:{ title:{display:true,text:'Class-wise Boys & Girls Strength',font:{size:15,weight:'bold'}}, legend:{position:'bottom'}, tooltip:{ callbacks:{ footer:(items)=>'Total: '+items.reduce((s,i)=>s+i.raw,0) } } }, scales:{ y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'rgba(0,0,0,0.05)'}}, x:{grid:{display:false}} } }
+    });
+}
+
+// ── AUTO ID — Duplicate check helper only ──────────────────────
+function setAutoId() {
+    // ST_ID is now manual — just clear if adding new student
+    if (document.getElementById('editIndex').value === '-1') {
+        document.getElementById('ST_ID').value = '';
+    }
+}
+
+// ── COMPRESS PHOTO ─────────────────────────────────────────────
+function compressImage(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            const c = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            const MW=150, MH=200;
+            if(w>h){if(w>MW){h*=MW/w;w=MW;}}else{if(h>MH){w*=MH/h;h=MH;}}
+            c.width=w; c.height=h;
+            c.getContext('2d').drawImage(img,0,0,w,h);
+            const b64 = c.toDataURL('image/jpeg',0.7);
+            document.getElementById('PHOTO_BASE64').value = b64;
+            document.getElementById('photoPreview').src = b64;
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+// ── SAVE STUDENT ───────────────────────────────────────────────
+function saveStudent(e) {
+    e.preventDefault();
+    const stId = document.getElementById('ST_ID').value.trim();
+    if (!stId) { showToast('Student ID (ST_ID) required hai!', 'error'); return; }
+    const adhr   = document.getElementById('AADHAR_NO').value;
+    const mob    = document.getElementById('MOBILE_NO').value;
+    const pin    = document.getElementById('PINCODE').value;
+    const admNo  = document.getElementById('ADMISSION_NO').value;
+    const editIdx = parseInt(document.getElementById('editIndex').value);
+
+    if (adhr.length!==12) { showToast('Aadhar No. must be 12 digits!','error'); return; }
+    if (mob.length!==10)  { showToast('Mobile No. must be 10 digits!','error'); return; }
+    if (pin.length!==6)   { showToast('Pincode must be 6 digits!','error'); return; }
+
+    const disability = document.getElementById('DISABILITY').value;
+    if (disability==='YES' && !document.getElementById('DISABILITY_TYPE').value.trim()) {
+        showToast('Please enter Disability Type/Description!','error'); return;
+    }
+    const bankType = document.getElementById('BANK_HOLDER_TYPE').value;
+    if (bankType==='GUARDIAN' && !document.getElementById('BANK_GUARDIAN_NAME').value.trim()) {
+        showToast('Please enter Guardian/Parent Name!','error'); return;
+    }
+    const guardianAadhar = document.getElementById('BANK_GUARDIAN_AADHAR').value;
+    if (bankType==='GUARDIAN' && guardianAadhar.length !== 12) {
+        showToast('Guardian Aadhar No. must be exactly 12 digits!','error'); return;
+    }
+
+    const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
+    if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
+    const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
+    if (isStIdDup) { showToast('Duplicate ST_ID! This ID already exists.','error'); return; }
+
+    const FIELDS = ['ST_ID','SESSION','ADMISSION_NO','D_O_A','SCHOOL_NAME','AAPAR_ID','PEN_ID',
+                    'NAME_OF_STUDENT','FATHER_NAME','MOTHER_NAME','D_O_B','GENDER','CATEGORY',
+                    'DISABILITY','DISABILITY_TYPE','DISABILITY_PERCENT',
+                    'VILLAGE','POST','BLOCK','DISTRICT','PINCODE',
+                    'AADHAR_NO','MOBILE_NO',
+                    'BANK_HOLDER_TYPE','BANK_GUARDIAN_NAME','BANK_GUARDIAN_RELATION','BANK_GUARDIAN_AADHAR',
+                    'BANK_ACC_NO','IFSC_CODE','BANK_BRANCH','EVIDYA_ID'];
+
+    const data = {};
+    FIELDS.forEach(k => { const el = document.getElementById(k); if(el) data[k] = el.value; });
+    data.CLASS        = document.getElementById('CLASS').value;
+    data.PHOTO_BASE64 = document.getElementById('PHOTO_BASE64').value;
+    // Uppercase important fields
+    ['NAME_OF_STUDENT','FATHER_NAME','MOTHER_NAME','BANK_GUARDIAN_NAME','VILLAGE'].forEach(k => { if(data[k]) data[k]=data[k].toUpperCase(); });
+
+    if (editIdx === -1) {
+        students.push(data);
+        showToast('Student record added! ☁️ Saving to Cloud...');
+    } else {
+        if (students[editIdx].MARKS) data.MARKS = students[editIdx].MARKS;
+        students[editIdx] = data;
+        showToast('Student record updated! ☁️ Saving to Cloud...');
+    }
+
+    saveStudentsToFirebase(); // async — real-time listener updates UI
+    resetFormMode();
+    updateDashboard();
+    filterData();
+    switchTab('databaseSection', document.querySelectorAll('.nav-link')[2]);
+}
+
+// ── EDIT ───────────────────────────────────────────────────────
+function editRecord(index) {
+    const std = students[index];
+    const FIELDS = ['ST_ID','SESSION','ADMISSION_NO','D_O_A','SCHOOL_NAME','AAPAR_ID','PEN_ID',
+                    'NAME_OF_STUDENT','FATHER_NAME','MOTHER_NAME','D_O_B','GENDER','CATEGORY',
+                    'DISABILITY','DISABILITY_TYPE','DISABILITY_PERCENT',
+                    'VILLAGE','POST','BLOCK','DISTRICT','PINCODE','AADHAR_NO','MOBILE_NO',
+                    'BANK_HOLDER_TYPE','BANK_GUARDIAN_NAME','BANK_GUARDIAN_RELATION','BANK_GUARDIAN_AADHAR',
+                    'BANK_ACC_NO','IFSC_CODE','BANK_BRANCH','EVIDYA_ID','CLASS'];
+    FIELDS.forEach(k => { const el=document.getElementById(k); if(el) el.value=std[k]||''; });
+    document.getElementById('PHOTO_BASE64').value = std.PHOTO_BASE64||'';
+    document.getElementById('photoPreview').src   = std.PHOTO_BASE64||'https://via.placeholder.com/50?text=No+Img';
+    toggleDisabilityField(); toggleBankHolderFields();
+    document.getElementById('editIndex').value = index;
+    document.getElementById('formTitle').innerHTML = '✏️ Update Student Record';
+    document.getElementById('submitBtn').innerHTML = '🔄 Update Record';
+    document.getElementById('submitBtn').classList.add('update-mode');
+    document.getElementById('cancelEditBtn').style.display = 'block';
+    switchTab('addStudentSection', document.getElementById('navAddStudent'));
+}
+
+// ── RESET FORM ─────────────────────────────────────────────────
+function resetFormMode() {
+    document.getElementById('studentForm').reset();
+    document.getElementById('editIndex').value = '-1';
+    document.getElementById('PHOTO_BASE64').value = '';
+    document.getElementById('photoPreview').src = 'https://via.placeholder.com/50?text=No+Img';
+    document.getElementById('formTitle').innerHTML = '➕ Add New Student Record';
+    document.getElementById('submitBtn').innerHTML = '💾 Save Student Record';
+    document.getElementById('submitBtn').classList.remove('update-mode');
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('SCHOOL_NAME').value = 'UMS NAWADA KATKAMDAG';
+    document.getElementById('disabilityTypeGroup').style.display = 'none';
+    document.getElementById('disabilityPercentGroup').style.display = 'none';
+    document.getElementById('guardianBankNameGroup').style.display  = 'none';
+    document.getElementById('guardianRelationGroup').style.display   = 'none';
+    document.getElementById('guardianAadharGroup').style.display     = 'none';
+    document.getElementById('BANK_GUARDIAN_AADHAR').value = '';
+    setAutoId();
+}
+
+// ── DELETE ─────────────────────────────────────────────────────
+async function deleteRecord(index) {
+    const pin = prompt('Security Verification: Enter your current password to proceed:');
+    if (!pin) return;
+    // Verify via Firebase re-auth
+    if (IS_FIREBASE_ON && fbAuth.currentUser) {
+        try {
+            const cred = firebase.auth.EmailAuthProvider.credential(ADMIN_EMAIL, pin);
+            await fbAuth.currentUser.reauthenticateWithCredential(cred);
+        } catch(e) {
+            showToast('Incorrect password! Access denied.','error'); return;
+        }
+    }
+    if (confirm('Permanently delete this active record?')) {
+        students.splice(index, 1);
+        saveStudentsToFirebase();
+        updateDashboard(); filterData();
+        showToast('Record deleted!','error');
+    }
+}
+
+// ── PASSOUT ────────────────────────────────────────────────────
+function markAsPassout(index) {
+    const std = students[index];
+    if (std.CLASS !== 'Class 8') { showToast('Only Class 8 students can be marked passout!','error'); return; }
+    const passYear = prompt(`Enter Passing Year for ${std.NAME_OF_STUDENT} (e.g., 2026):`);
+    if (!passYear || !passYear.trim()) return;
+    if (confirm(`Move ${std.NAME_OF_STUDENT} to Alumni?`)) {
+        std.PASS_YEAR = passYear.trim();
+        alumniList.push(std);
+        students.splice(index, 1);
+        saveStudentsToFirebase();
+        saveAlumniToFirebase();
+        showToast('🎓 Moved to Alumni!');
+        updateDashboard(); filterData(); filterAlumniData();
+    }
+}
+
+// ── FILTER ACTIVE DB ───────────────────────────────────────────
+function filterData() {
+    const q   = document.getElementById('searchInput').value.toUpperCase();
+    const cls = document.getElementById('classFilter').value;
+    const gen = document.getElementById('genderFilter').value;
+    const ses = document.getElementById('sessionFilter').value;
+    const dis = document.getElementById('disabilityFilter').value;
+    const bnk = document.getElementById('bankHolderFilter').value;
+    const cat = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : 'ALL';
+
+    const filtered = students.filter(s => {
+        // Extended search: name, aadhar, mobile, village, father name, admission no
+        const sm = [s.NAME_OF_STUDENT,s.AADHAR_NO,s.MOBILE_NO,s.VILLAGE,s.FATHER_NAME,s.ADMISSION_NO,s.AAPAR_ID,s.PEN_ID]
+                   .some(v=>String(v||'').toUpperCase().includes(q));
+        return sm
+               && (cls==='ALL'||s.CLASS===cls)
+               && (gen==='ALL'||s.GENDER===gen)
+               && (ses==='ALL'||s.SESSION===ses)
+               && (dis==='ALL'||(s.DISABILITY||'NO')===dis)
+               && (bnk==='ALL'||(s.BANK_HOLDER_TYPE||'STUDENT')===bnk)
+               && (cat==='ALL'||(s.CATEGORY||'')===cat);
+    });
+    updateTable(filtered);
+    updateDbStatsBar(filtered);
+}
+
+function updateDbStatsBar(arr) {
+    const gen = arr.filter(s=>s.CATEGORY==='GENERAL').length;
+    const obc = arr.filter(s=>s.CATEGORY==='OBC').length;
+    const sc  = arr.filter(s=>s.CATEGORY==='SC').length;
+    const st  = arr.filter(s=>s.CATEGORY==='ST').length;
+    document.getElementById('dbStatsBar').innerHTML = `
+        <span style="color:var(--primary);">📊 Showing: <strong>${arr.length}</strong></span>
+        <span style="color:#3b82f6;">👦 Boys: <strong>${arr.filter(s=>s.GENDER==='MALE').length}</strong></span>
+        <span style="color:#ec4899;">👧 Girls: <strong>${arr.filter(s=>s.GENDER==='FEMALE').length}</strong></span>
+        <span style="color:#7c3aed;">♿ Divyang: <strong>${arr.filter(s=>s.DISABILITY==='YES').length}</strong></span>
+        <span style="color:#059669;">🏦 Own A/C: <strong>${arr.filter(s=>!s.BANK_HOLDER_TYPE||s.BANK_HOLDER_TYPE==='STUDENT').length}</strong></span>
+        <span style="color:#d97706;">👨‍👩‍👧 Guardian A/C: <strong>${arr.filter(s=>s.BANK_HOLDER_TYPE==='GUARDIAN').length}</strong></span>
+        <span style="color:#6b7280; border-left:2px solid #e5e7eb; padding-left:10px;">Gen: <strong>${gen}</strong> | OBC: <strong>${obc}</strong> | SC: <strong>${sc}</strong> | ST: <strong>${st}</strong></span>`;
+}
+
+function updateTable(arr) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    if (!arr.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:#9ca3af;">No Records Found</td></tr>'; return; }
+
+    arr.forEach(std => {
+        const ri = students.findIndex(s => s.ST_ID === std.ST_ID);
+        const gi = std.GENDER==='MALE'?'👦':'👧';
+        const ph = std.PHOTO_BASE64
+            ? `<img src="${std.PHOTO_BASE64}" class="table-thumb">`
+            : `<div class="table-thumb" style="background:#f3f4f6;display:inline-flex;align-items:center;justify-content:center;font-size:18px;">👤</div>`;
+        const pb = std.CLASS==='Class 8' ? `<button class="btn-passout" onclick="markAsPassout(${ri})" title="Mark Passout">🎓</button>` : '';
+        const db = std.DISABILITY==='YES'
+            ? `<span class="disability-badge yes">♿ ${std.DISABILITY_TYPE||'Divyang'}</span>`
+            : `<span class="disability-badge no">✅ Normal</span>`;
+        const bb = std.BANK_HOLDER_TYPE==='GUARDIAN'
+            ? `<span class="bank-badge guardian">👨‍👩‍👧 Guardian<br><small>${std.BANK_GUARDIAN_NAME||''}</small></span>`
+            : `<span class="bank-badge student">👦 Own A/C</span>`;
+
+        tbody.innerHTML += `<tr>
+            <td>${ph}</td>
+            <td style="color:var(--secondary);font-weight:bold;">${gi} ${std.NAME_OF_STUDENT}<br><span style="font-size:11px;color:#888;">Adm: ${std.ADMISSION_NO}</span></td>
+            <td><span style="color:#f59e0b;font-weight:bold;">${std.SESSION||'N/A'}</span><br><span style="font-weight:bold;color:var(--success);">${std.CLASS}</span></td>
+            <td>${db}</td>
+            <td style="font-size:12px;">🪪 ${std.AADHAR_NO}<br>📱 ${std.MOBILE_NO}</td>
+            <td>${bb}</td>
+            <td class="action-btns">
+                ${pb}
+                <button class="btn-report" onclick="openReportCard(${ri},false)" title="Report Card">📝</button>
+                <button class="btn-view" onclick="viewRecord(${ri},'active')">👁️</button>
+                <button class="btn-edit" onclick="editRecord(${ri})">✏️</button>
+                <button class="btn-del" onclick="deleteRecord(${ri})">🗑️</button>
+            </td>
+        </tr>`;
+    });
+}
+
+// ── EXPORT CSV ─────────────────────────────────────────────────
+function exportToCSV() {
+    if (!students.length) { showToast('No data to export','error'); return; }
+    let csv = 'ST_ID,Session,Admission No,DOA,Class,Name,Father,Mother,DOB,Gender,Category,Disability,Disability Type,Aadhar,Mobile,Village,Bank Holder,Guardian Name,Guardian Aadhar,Bank A/C,IFSC,AAPAR ID,PEN ID\n';
+    students.forEach(s => {
+        csv += `"${s.ST_ID}","${s.SESSION||''}","${s.ADMISSION_NO}","${s.D_O_A}","${s.CLASS}","${s.NAME_OF_STUDENT}","${s.FATHER_NAME}","${s.MOTHER_NAME}","${s.D_O_B}","${s.GENDER}","${s.CATEGORY}","${s.DISABILITY||'NO'}","${s.DISABILITY_TYPE||''}","${s.AADHAR_NO}","${s.MOBILE_NO}","${s.VILLAGE}","${s.BANK_HOLDER_TYPE||'STUDENT'}","${s.BANK_GUARDIAN_NAME||''} ","${s.BANK_GUARDIAN_AADHAR||'N/A'}","${s.BANK_ACC_NO}","${s.IFSC_CODE}","${s.AAPAR_ID||''}","${s.PEN_ID||''}"\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = 'UMS_Students_Data.csv'; a.click();
+    showToast('CSV Exported!');
+}
+
+// ── BACKUP JSON ────────────────────────────────────────────────
+function backupJSON() {
+    if (!students.length) { showToast('No data to backup','error'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(students)],{type:'application/json'}));
+    a.download = `UMS_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+    showToast('Backup Downloaded!');
+}
+
+// ── RESTORE JSON ───────────────────────────────────────────────
+function restoreJSON(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (Array.isArray(data)) {
+                if (confirm(`Sure? This will overwrite current DB with ${data.length} records.`)) {
+                    students = data;
+                    saveStudentsToFirebase();
+                    updateDashboard(); filterData();
+                    showToast('Database restored successfully! ☁️ Syncing to Cloud...');
+                }
+            } else { showToast('Invalid file format!','error'); }
+        } catch(err) { showToast('File parse error!','error'); }
+    };
+    reader.readAsText(file);
+}
+
+// ── ALUMNI ────────────────────────────────────────────────────
+function filterAlumniData() {
+    const qy  = document.getElementById('alumniYearFilter').value.toUpperCase();
+    const gen = document.getElementById('alumniGenderFilter').value;
+    const ses = document.getElementById('alumniSessionFilter').value;
+    const filtered = alumniList.filter(s => {
+        return String(s.PASS_YEAR||'').toUpperCase().includes(qy)
+            && (gen==='ALL'||s.GENDER===gen)
+            && (ses==='ALL'||s.SESSION===ses);
+    });
+
+    let sc = {}; alumniList.forEach(s => { const k=s.SESSION||'Unknown'; sc[k]=(sc[k]||0)+1; });
+    let sh = `<span>🎓 Total: <strong>${alumniList.length}</strong></span>`;
+    for (const k in sc) sh += `<span style="padding:2px 8px;background:rgba(255,255,255,0.6);border-radius:4px;color:#1e3a8a;">${k}: <strong>${sc[k]}</strong></span>`;
+    document.getElementById('alumniSessionStats').innerHTML = alumniList.length ? sh : '<span>No alumni records.</span>';
+
+    const tbody = document.getElementById('alumniTableBody');
+    tbody.innerHTML = '';
+    if (!filtered.length) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:25px;">No Alumni Found</td></tr>'; return; }
+
+    filtered.forEach(std => {
+        const ri = alumniList.findIndex(s=>s.ST_ID===std.ST_ID);
+        const gi = std.GENDER==='MALE'?'👦':'👧';
+        const ph = std.PHOTO_BASE64
+            ? `<img src="${std.PHOTO_BASE64}" class="table-thumb">`
+            : `<div class="table-thumb" style="background:#f3f4f6;display:inline-flex;align-items:center;justify-content:center;font-size:18px;">👤</div>`;
+        tbody.innerHTML += `<tr>
+            <td>${ph}</td>
+            <td style="color:#8b5cf6;font-weight:bold;">${std.NAME_OF_STUDENT}</td>
+            <td style="font-weight:bold;color:#10b981;">🎓 Year: ${std.PASS_YEAR}<br><span style="font-size:11px;color:#555;">Ses: ${std.SESSION||'N/A'}</span></td>
+            <td>${gi} ${std.GENDER}</td>
+            <td style="font-size:12px;">🪪 ${std.AADHAR_NO}</td>
+            <td class="action-btns">
+                <button class="btn-report" onclick="openReportCard(${ri},true)" title="Report Card">📝</button>
+                <button class="btn-view" onclick="viewRecord(${ri},'alumni')">👁️ View</button>
+                <button class="btn-del" onclick="deleteAlumniRecord(${ri})">🗑️</button>
+            </td>
+        </tr>`;
+    });
+}
+
+async function deleteAlumniRecord(index) {
+    const pin = prompt('Security Verification: Enter your current password to proceed:');
+    if (!pin) return;
+    if (IS_FIREBASE_ON && fbAuth.currentUser) {
+        try {
+            const cred = firebase.auth.EmailAuthProvider.credential(ADMIN_EMAIL, pin);
+            await fbAuth.currentUser.reauthenticateWithCredential(cred);
+        } catch(e) {
+            showToast('Incorrect password! Access denied.','error'); return;
+        }
+    }
+    if (confirm('Permanently delete alumni record?')) {
+        alumniList.splice(index,1);
+        saveAlumniToFirebase();
+        filterAlumniData();
+        showToast('Alumni record deleted!','error');
+    }
+}
+
+// ── VIEW PROFILE ───────────────────────────────────────────────
+function viewRecord(index, type) {
+    currentViewStudent = type==='active' ? students[index] : alumniList[index];
+    const modal = document.getElementById('modalData');
+    modal.innerHTML = '';
+    const photo = document.getElementById('viewProfilePhoto');
+    if (currentViewStudent.PHOTO_BASE64) { photo.src=currentViewStudent.PHOTO_BASE64; photo.style.display='inline-block'; }
+    else photo.style.display='none';
+
+    const show = ['SESSION','ADMISSION_NO','NAME_OF_STUDENT','FATHER_NAME','MOTHER_NAME','D_O_B','GENDER','CATEGORY',
+                  'DISABILITY','DISABILITY_TYPE','DISABILITY_PERCENT',
+                  'AAPAR_ID','PEN_ID','EVIDYA_ID','AADHAR_NO','MOBILE_NO',
+                  'VILLAGE','POST','BLOCK','DISTRICT','PINCODE',
+                  'BANK_HOLDER_TYPE','BANK_GUARDIAN_NAME','BANK_GUARDIAN_RELATION','BANK_GUARDIAN_AADHAR',
+                  'BANK_ACC_NO','IFSC_CODE','BANK_BRANCH','CLASS','PASS_YEAR'];
+
+    show.forEach(k => {
+        if (!currentViewStudent[k]) return;
+        let v = currentViewStudent[k];
+        if (k==='DISABILITY') v = v==='YES'?'<span style="color:#7c3aed;font-weight:700;">♿ YES (Divyang)</span>':'<span style="color:#059669;">✅ No Disability</span>';
+        if (k==='BANK_HOLDER_TYPE') v = v==='GUARDIAN'?'<span style="color:#d97706;font-weight:700;">👨‍👩‍👧 Guardian/Parent</span>':'<span style="color:#059669;font-weight:700;">👦 Own Account</span>';
+        modal.innerHTML += `<div><strong>${k.replace(/_/g,' ')}:</strong></div><div>${v}</div>`;
+    });
+
+    document.getElementById('normalProfileView').style.display='block';
+    document.getElementById('idCardView').style.display='none';
+    const vm = document.getElementById('viewModal');
+    vm.style.display='flex';
+    vm.style.alignItems='center';
+    vm.style.justifyContent='center';
+}
+
+function showIDCard() {
+    if (!currentViewStudent) return;
+    document.getElementById('idName').innerText  = currentViewStudent.NAME_OF_STUDENT;
+    document.getElementById('idClass').innerText = currentViewStudent.PASS_YEAR?'ALUMNI':currentViewStudent.CLASS;
+    document.getElementById('idAadhar').innerText = currentViewStudent.AADHAR_NO||'N/A';
+    document.getElementById('idCat').innerText   = currentViewStudent.CATEGORY||'N/A';
+    document.getElementById('idFName').innerText = currentViewStudent.FATHER_NAME;
+    document.getElementById('idGen').innerText   = currentViewStudent.GENDER;
+    document.getElementById('idDob').innerText   = currentViewStudent.D_O_B;
+    document.getElementById('idMob').innerText   = currentViewStudent.MOBILE_NO||'N/A';
+    document.getElementById('idPhotoArea').innerHTML = currentViewStudent.PHOTO_BASE64
+        ? `<img src="${currentViewStudent.PHOTO_BASE64}">` : 'Paste Photo';
+    document.getElementById('normalProfileView').style.display='none';
+    document.getElementById('idCardView').style.display='block';
+}
+
+function hideIDCard() { document.getElementById('idCardView').style.display='none'; document.getElementById('normalProfileView').style.display='block'; }
+
+function printIDCard() {
+    if (!currentViewStudent) return;
+    // Fill the dedicated print container (not the modal)
+    const p = document.getElementById('picPhotoArea');
+    p.innerHTML = currentViewStudent.PHOTO_BASE64 ? `<img src="${currentViewStudent.PHOTO_BASE64}" style="width:100%;height:100%;object-fit:cover;">` : 'Photo';
+    document.getElementById('picName').innerText  = currentViewStudent.NAME_OF_STUDENT || '';
+    document.getElementById('picClass').innerText = currentViewStudent.PASS_YEAR ? 'ALUMNI' : (currentViewStudent.CLASS || '');
+    document.getElementById('picAadhar').innerText = currentViewStudent.AADHAR_NO || 'N/A';
+    document.getElementById('picCat').innerText   = currentViewStudent.CATEGORY || 'N/A';
+    document.getElementById('picFName').innerText = currentViewStudent.FATHER_NAME || '';
+    document.getElementById('picGen').innerText   = currentViewStudent.GENDER || '';
+    document.getElementById('picDob').innerText   = currentViewStudent.D_O_B || '';
+    document.getElementById('picMob').innerText   = currentViewStudent.MOBILE_NO || 'N/A';
+    // Show container, print, then hide
+    document.getElementById('printIdContainer').style.display = 'block';
+    printDataMode('print-idcard-only');
+    setTimeout(() => { document.getElementById('printIdContainer').style.display = 'none'; }, 1200);
+}
+
+async function downloadIDCardPDF() {
+    showToast('Generating PDF...','info');
+    const c = await html2canvas(document.getElementById('generatedIdCard'),{scale:4,useCORS:true});
+    const {jsPDF} = window.jspdf;
+    const pdf = new jsPDF('p','mm',[54,86]);
+    pdf.addImage(c.toDataURL('image/jpeg',1.0),'JPEG',0,0,54,86);
+    pdf.save(`ID_${currentViewStudent.NAME_OF_STUDENT}.pdf`);
+    showToast('PDF Downloaded!');
+}
+
+function printProfile() { printDataMode('print-profile-mode'); }
+
+// ── REPORT CARD ────────────────────────────────────────────────
+function openReportCard(index, isAlumni) {
+    currentReportIndex = index; isReportFromAlumni = isAlumni;
+    const std = isAlumni ? alumniList[index] : students[index];
+    document.getElementById('rcStudentNameLabel').innerText = `Student: ${std.NAME_OF_STUDENT} (${std.CLASS})`;
+    const m = std.MARKS||{hin:'',eng:'',mat:'',sci:'',sst:'',san:''};
+    ['Hin','Eng','Mat','Sci','Sst','San'].forEach(k=>{ const el=document.getElementById('mark'+k); if(el) el.value=m[k.toLowerCase()]||''; });
+    document.getElementById('marksEntrySection').style.display='block';
+    document.getElementById('printableReportSection').style.display='none';
+    const rcModal = document.getElementById('reportCardModal');
+    rcModal.style.display='flex';
+    rcModal.style.alignItems='center';
+    rcModal.style.justifyContent='center';
+}
+
+function saveAndGenerateReport() {
+    const h =+document.getElementById('markHin').value||0;
+    const e =+document.getElementById('markEng').value||0;
+    const m =+document.getElementById('markMat').value||0;
+    const s =+document.getElementById('markSci').value||0;
+    const ss=+document.getElementById('markSst').value||0;
+    const sanEl=document.getElementById('markSan');
+    const san=sanEl?+sanEl.value||0:0;
+
+    // Sanskrit/Urdu optional — count in total only if filled
+    const hasSan = sanEl && sanEl.value.trim() !== '';
+    const total  = h+e+m+s+ss+(hasSan?san:0);
+    const maxMk  = hasSan ? 600 : 500;
+    const subjects = hasSan ? 6 : 5;
+    const pct    = (total/subjects).toFixed(2);
+    const grade  = pct>=80?'A':pct>=60?'B':pct>=40?'C':'D';
+
+    const std = isReportFromAlumni ? alumniList[currentReportIndex] : students[currentReportIndex];
+    std.MARKS = {hin:h, eng:e, mat:m, sci:s, sst:ss, san:san};
+    if (isReportFromAlumni) saveAlumniToFirebase(); else saveStudentsToFirebase();
+
+    document.getElementById('rcName').innerText  = std.NAME_OF_STUDENT;
+    document.getElementById('rcClass').innerText = std.CLASS;
+    document.getElementById('rcFName').innerText = std.FATHER_NAME;
+    document.getElementById('rcAdm').innerText   = std.ADMISSION_NO;
+    document.getElementById('rcDob').innerText   = std.D_O_B;
+    document.getElementById('rcSes').innerText   = std.SESSION||'N/A';
+    document.getElementById('tdHin').innerText = h;
+    document.getElementById('tdEng').innerText = e;
+    document.getElementById('tdMat').innerText = m;
+    document.getElementById('tdSci').innerText = s;
+    document.getElementById('tdSst').innerText = ss;
+    document.getElementById('tdSan').innerText = hasSan ? san : '-';
+    document.getElementById('rcTotal').innerText   = total;
+    document.getElementById('rcMaxTotal').innerText = maxMk;
+    document.getElementById('rcPercent').innerText = pct;
+    document.getElementById('rcGrade').innerText   = grade;
+    document.getElementById('marksEntrySection').style.display='none';
+    document.getElementById('printableReportSection').style.display='block';
+    showToast('Result Generated!');
+}
+
+function editMarksAgain() { document.getElementById('printableReportSection').style.display='none'; document.getElementById('marksEntrySection').style.display='block'; }
+
+// ── PRINT ──────────────────────────────────────────────────────
+function printDataMode(cls) { document.body.classList.add(cls); window.print(); setTimeout(()=>document.body.classList.remove(cls), 1000); }
+
+// ── BIRTHDAY TRACKER ───────────────────────────────────────────
+function checkBirthdays(manual) {
+    if (!students.length) { if(manual) showToast('Database is empty!','error'); return; }
+    const today = new Date(); today.setHours(0,0,0,0);
+    let todayB=[], upcomingB=[];
+
+    students.forEach(std => {
+        if (!std.D_O_B) return;
+        const p = std.D_O_B.split('-'); if(p.length!==3) return;
+        let nb = new Date(today.getFullYear(), parseInt(p[1])-1, parseInt(p[2]));
+        if (nb < today && (today-nb)>(24*60*60*1000)) nb.setFullYear(today.getFullYear()+1);
+        const diff = Math.ceil((nb-today)/(1000*60*60*24));
+        if (diff===0) todayB.push(std);
+        else if (diff>0 && diff<=5) upcomingB.push({student:std,daysLeft:diff});
+    });
+
+    if (!todayB.length && !upcomingB.length && !manual) return;
+
+    let html = '';
+    if (todayB.length) {
+        startConfetti();
+        html += `<div><div style="background:#ff9a9e;color:white;padding:10px;border-radius:8px;font-weight:bold;margin-bottom:10px;font-size:18px;">🎁 Today's Stars!</div>`;
+        todayB.forEach(s => { html += `<div class="bday-list-item"><span>🎂 <strong>${s.NAME_OF_STUDENT}</strong><br><span style="font-size:12px;color:#555;">Class: ${s.CLASS}</span></span><span style="font-size:24px;">🍰</span></div>`; });
+        html += `</div><br>`;
+    } else {
+        html += `<p style="text-align:center;color:#555;font-size:18px;">No birthdays today.</p><br>`;
+    }
+    if (upcomingB.length) {
+        html += `<div><div style="background:#fbcfe8;color:#be185d;padding:8px;border-radius:5px;font-weight:bold;margin-bottom:10px;">⏳ Upcoming Birthdays (Next 5 Days)</div>`;
+        upcomingB.forEach(d => {
+            const dt = d.daysLeft===1?'Tomorrow':`In ${d.daysLeft} Days`;
+            html += `<div style="padding:10px;border-left:4px solid #f472b6;background:rgba(255,255,255,0.6);margin-bottom:8px;border-radius:4px;"><strong>${d.student.NAME_OF_STUDENT}</strong> <span style="color:#be185d;">(${d.student.CLASS})</span><br><span style="font-size:12px;font-weight:bold;">${dt}</span></div>`;
+        });
+        html += `</div>`;
+    }
+    document.getElementById('bdayContent').innerHTML = html;
+    document.getElementById('bdayModal').style.display = 'flex';
+}
+
+function closeBirthdayModal() { document.getElementById('bdayModal').style.display='none'; setTimeout(stopConfetti,2000); }
+// ── MOBILE SIDEBAR TOGGLE ──────────────────────────────────────
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+}
+// Auto-close sidebar on nav click (mobile)
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+    });
+});
+
+// ── CLASS PROMOTION SYSTEM ─────────────────────────────────────
+const CLASS_ORDER = ['Pre-Primary','Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8'];
+let promoHistory = [];
+
+function getNextClass(cls) {
+    const idx = CLASS_ORDER.indexOf(cls);
+    if (idx === -1 || idx === CLASS_ORDER.length - 1) return null; // Class 8 → Alumni
+    return CLASS_ORDER[idx + 1];
+}
+
+function previewPromotion() {
+    const cls     = document.getElementById('promoClass').value;
+    const session = document.getElementById('promoFromSession').value;
+    const passGrp = document.getElementById('passYearGroup');
+
+    if (!cls) { document.getElementById('promoPreviewBox').style.display='none'; return; }
+
+    // Show pass year input only for Class 8
+    if (cls === 'Class 8') {
+        passGrp.style.display = 'flex';
+    } else {
+        passGrp.style.display = 'none';
+    }
+
+    const eligible = students.filter(s => s.CLASS === cls && (session === 'ALL' || s.SESSION === session));
+    const nextCls  = cls === 'Class 8' ? '🎓 Alumni' : getNextClass(cls);
+
+    const previewBox = document.getElementById('promoPreviewBox');
+    const emptyMsg   = document.getElementById('promoEmptyMsg');
+
+    if (!eligible.length) {
+        previewBox.style.display = 'none';
+        emptyMsg.style.display   = 'block';
+        return;
+    }
+
+    emptyMsg.style.display   = 'none';
+    previewBox.style.display = 'block';
+    document.getElementById('promoPreviewTitle').innerHTML =
+        `📋 <strong>${eligible.length}</strong> students found in <strong>${cls}</strong> (Session: ${session}) → Will be promoted to <strong>${nextCls}</strong>`;
+
+    const tbody = document.getElementById('promoPreviewBody');
+    tbody.innerHTML = '';
+    eligible.forEach((std, i) => {
+        const ph = std.PHOTO_BASE64
+            ? `<img src="${std.PHOTO_BASE64}" class="table-thumb">`
+            : `<div class="table-thumb" style="background:#f3f4f6;display:inline-flex;align-items:center;justify-content:center;font-size:16px;">👤</div>`;
+        tbody.innerHTML += `<tr>
+            <td>${i+1}</td><td>${ph}</td>
+            <td style="font-weight:bold;color:var(--secondary);">${std.NAME_OF_STUDENT}</td>
+            <td style="color:#f59e0b;font-weight:bold;">${std.CLASS}</td>
+            <td style="color:#10b981;font-weight:bold;">${nextCls}</td>
+            <td style="font-size:12px;">${std.AADHAR_NO}</td>
+        </tr>`;
+    });
+}
+
+async function executePromotion() {
+    const cls       = document.getElementById('promoClass').value;
+    const fromSes   = document.getElementById('promoFromSession').value;
+    const toSes     = document.getElementById('promoToSession').value;
+    const passYear  = document.getElementById('promoPassYear').value.trim();
+
+    if (!cls) { showToast('Please select a class!', 'error'); return; }
+    if (cls === 'Class 8' && !passYear) { showToast('Please enter the passing year!', 'error'); return; }
+
+    const eligible = students.filter(s => s.CLASS === cls && s.SESSION === fromSes);
+    if (!eligible.length) { showToast('No eligible students found for promotion!', 'error'); return; }
+
+    const nextCls = cls === 'Class 8' ? null : getNextClass(cls);
+    const confirmMsg = cls === 'Class 8'
+        ? `Move ${eligible.length} student(s) from Class 8 to Alumni? (Pass Year: ${passYear})`
+        : `Promote ${eligible.length} student(s) from ${cls} to ${nextCls}?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    showLoader('Processing Promotion...', 'Please wait, do not close the window...');
+
+    let promotedCount = 0;
+    let alumniMoved   = 0;
+
+    eligible.forEach(std => {
+        const idx = students.findIndex(s => s.ST_ID === std.ST_ID);
+        if (idx === -1) return;
+
+        if (cls === 'Class 8') {
+            // Move to Alumni
+            const alumniRecord = {...students[idx], PASS_YEAR: passYear, OLD_SESSION: fromSes};
+            alumniList.push(alumniRecord);
+            students.splice(idx, 1);
+            alumniMoved++;
+        } else {
+            // Promote to next class
+            students[idx].CLASS   = nextCls;
+            students[idx].SESSION = toSes;
+            students[idx].PREV_CLASS   = cls;
+            students[idx].PREV_SESSION = fromSes;
+            promotedCount++;
+        }
+    });
+
+    // Save to Firebase
+    await saveStudentsToFirebase();
+    if (alumniMoved > 0) await saveAlumniToFirebase();
+
+    // Save promotion history
+    const historyEntry = {
+        date: new Date().toLocaleString('en-IN'),
+        fromClass: cls,
+        toClass: cls === 'Class 8' ? 'Alumni' : nextCls,
+        fromSession: fromSes,
+        toSession: toSes,
+        count: eligible.length,
+        passYear: passYear || null
+    };
+    promoHistory.unshift(historyEntry);
+    try { localStorage.setItem('umsPromoHistory', JSON.stringify(promoHistory.slice(0, 20))); } catch(e) {}
+
+    hideLoader();
+    updateDashboard();
+    filterData();
+    filterAlumniData();
+    renderPromoHistory();
+
+    // Reset
+    document.getElementById('promoClass').value = '';
+    document.getElementById('promoPreviewBox').style.display = 'none';
+    document.getElementById('promoPassYear').value = '';
+    document.getElementById('passYearGroup').style.display = 'none';
+
+    if (cls === 'Class 8') {
+        showToast(`🎓 ${alumniMoved} student(s) successfully moved to Alumni!`);
+    } else {
+        showToast(`✅ ${promotedCount} student(s) promoted to ${nextCls} successfully!`);
+    }
+}
+
+function renderPromoHistory() {
+    const box = document.getElementById('promoHistory');
+    if (!promoHistory.length) { box.innerHTML = '<p style="color:#9ca3af;">No promotion history available yet.</p>'; return; }
+    box.innerHTML = promoHistory.slice(0, 10).map(h => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 15px;background:rgba(16,185,129,0.06);border-radius:8px;margin-bottom:8px;border-left:3px solid #10b981;flex-wrap:wrap;">
+            <span style="font-size:20px;">📈</span>
+            <div>
+                <strong>${h.fromClass} → ${h.toClass}</strong>
+                <span style="color:#6b7280;font-size:12px;margin-left:8px;">${h.fromSession} → ${h.toSession||''}</span>
+                ${h.passYear ? `<span style="color:#8b5cf6;font-size:12px;margin-left:8px;">Pass Year: ${h.passYear}</span>` : ''}
+            </div>
+            <span style="margin-left:auto;background:rgba(16,185,129,0.15);color:#059669;padding:3px 10px;border-radius:10px;font-weight:700;font-size:13px;">${h.count} students</span>
+            <span style="font-size:11px;color:#9ca3af;">${h.date}</span>
+        </div>
+    `).join('');
+}
+
+// Load promotion history on start
+try {
+    const ph = localStorage.getItem('umsPromoHistory');
+    if (ph) promoHistory = JSON.parse(ph);
+} catch(e) {}
+
+
+// ── ADMIN SETTINGS — Change Login ID & Password ───────────────
+async function changeLoginId() {
+    const newId  = document.getElementById('newLoginId').value.trim();
+    const pwd    = document.getElementById('confirmPwdForId').value.trim();
+
+    if (!newId)  { showToast('Please enter a new Login ID!','error'); return; }
+    if (newId.length < 3) { showToast('Login ID must be at least 3 characters long!','error'); return; }
+    if (!pwd)    { showToast('Please enter your current password to confirm!','error'); return; }
+
+    showLoader('Updating Login ID...','Please wait...');
+
+    // Re-authenticate first
+    if (IS_FIREBASE_ON && fbAuth.currentUser) {
+        try {
+            const cred = firebase.auth.EmailAuthProvider.credential(ADMIN_EMAIL, pwd);
+            await fbAuth.currentUser.reauthenticateWithCredential(cred);
+        } catch(e) {
+            hideLoader();
+            showToast('Incorrect current password!','error');
+            return;
+        }
+        // Save new loginId to Firebase DB
+        try {
+            await adminCfgRef.update({ loginId: newId });
+            ADMIN_LOGIN_ID = newId;
+            localStorage.setItem('umsAdminLoginId', newId);
+            document.getElementById('currentLoginIdDisplay').innerText = newId;
+            document.getElementById('newLoginId').value = '';
+            document.getElementById('confirmPwdForId').value = '';
+            hideLoader();
+            showToast('✅ Login ID updated successfully! Use "' + newId + '" to sign in.');
+        } catch(e) {
+            hideLoader();
+            showToast('Firebase save error: ' + e.message,'error');
+        }
+    } else {
+        // Demo mode
+        ADMIN_LOGIN_ID = newId;
+        localStorage.setItem('umsAdminLoginId', newId);
+        document.getElementById('currentLoginIdDisplay').innerText = newId;
+        document.getElementById('newLoginId').value = '';
+        document.getElementById('confirmPwdForId').value = '';
+        hideLoader();
+        showToast('✅ Login ID updated (Demo mode)!');
+    }
+}
+
+async function changePassword() {
+    const currentPwd    = document.getElementById('currentPwd').value.trim();
+    const newPwd        = document.getElementById('newPwd').value.trim();
+    const confirmNewPwd = document.getElementById('confirmNewPwd').value.trim();
+
+    if (!currentPwd) { showToast('Please enter your current password!','error'); return; }
+    if (!newPwd)     { showToast('Please enter a new password!','error'); return; }
+    if (newPwd.length < 6) { showToast('Password must be at least 6 characters long!','error'); return; }
+    if (newPwd !== confirmNewPwd) { showToast('Passwords do not match! Please re-enter.','error'); return; }
+    if (currentPwd === newPwd) { showToast('New password must be different from the current password!','error'); return; }
+
+    if (!IS_FIREBASE_ON) {
+        showToast('Password change is only available in Firebase mode!','error'); return;
+    }
+    if (!fbAuth.currentUser) {
+        showToast('Please sign in first!','error'); return;
+    }
+
+    showLoader('Updating Password...','Please wait...');
+
+    try {
+        // Step 1: Re-authenticate with current password
+        const cred = firebase.auth.EmailAuthProvider.credential(ADMIN_EMAIL, currentPwd);
+        await fbAuth.currentUser.reauthenticateWithCredential(cred);
+
+        // Step 2: Update password
+        await fbAuth.currentUser.updatePassword(newPwd);
+
+        // Step 3: Clear fields
+        document.getElementById('currentPwd').value    = '';
+        document.getElementById('newPwd').value        = '';
+        document.getElementById('confirmNewPwd').value = '';
+
+        hideLoader();
+        showToast('✅ Password successfully changed!');
+
+        // Auto logout after 2 seconds for security
+        setTimeout(async () => {
+            showToast('🔒 Signing out for security... Please sign in with your new password.','info');
+            setTimeout(() => lockSystem(), 2000);
+        }, 1500);
+
+    } catch(e) {
+        hideLoader();
+        if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            showToast('Incorrect current password!','error');
+        } else if (e.code === 'auth/weak-password') {
+            showToast('Password is too weak! Use at least 6 characters.','error');
+        } else {
+            showToast('Error: ' + e.message,'error');
+        }
+    }
+}
+
+// Load admin settings when section is opened
+function loadAdminSettings() {
+    const el = document.getElementById('currentLoginIdDisplay');
+    const em = document.getElementById('currentEmailDisplay');
+    if (el) el.innerText = ADMIN_LOGIN_ID;
+    if (em) em.innerText = IS_FIREBASE_ON ? ADMIN_EMAIL : 'Demo Mode';
+    // Load recovery email from Firebase
+    if (IS_FIREBASE_ON && adminCfgRef) {
+        adminCfgRef.once('value').then(snap => {
+            const cfg = snap.val();
+            const rec = document.getElementById('currentRecoveryEmail');
+            if (rec) rec.innerText = (cfg && cfg.recoveryEmail) ? cfg.recoveryEmail : 'Not set — Please set it now';
+        }).catch(() => {});
+    }
+}
+
+
+// ── NETWORK STATUS MONITOR ──────────────────────────────────────
+let networkBar = null;
+let networkHideTimer = null;
+let wasOffline = false;
+
+function initNetworkMonitor() {
+    networkBar = document.getElementById('networkStatusBar');
+    
+    // Browser online/offline events
+    window.addEventListener('offline', () => {
+        showNetworkStatus('offline', '🔴 No Internet Connection — Working in Offline Mode. Data will sync when reconnected.');
+        wasOffline = true;
+    });
+
+    window.addEventListener('online', () => {
+        if (wasOffline) {
+            showNetworkStatus('back-online', '🟢 Internet Reconnected! Syncing data with Cloud...');
+            wasOffline = false;
+            // Auto-hide after 4 seconds
+            if (networkHideTimer) clearTimeout(networkHideTimer);
+            networkHideTimer = setTimeout(() => hideNetworkStatus(), 4000);
+        }
+    });
+
+    // Firebase realtime connection monitor
+    if (IS_FIREBASE_ON) {
+        fbDb.ref('.info/connected').on('value', snap => {
+            const connected = snap.val();
+            const badge = document.getElementById('connectionBadge');
+            if (connected) {
+                badge.innerHTML = '🟢 Cloud Connected';
+                badge.style.background = 'rgba(52,211,153,0.15)';
+                badge.style.color = '#34d399';
+                // If was offline, show reconnected message
+                if (wasOffline) {
+                    showNetworkStatus('back-online', '🟢 Cloud Reconnected! Syncing your data...');
+                    wasOffline = false;
+                    if (networkHideTimer) clearTimeout(networkHideTimer);
+                    networkHideTimer = setTimeout(() => hideNetworkStatus(), 4000);
+                }
+            } else {
+                badge.innerHTML = '🔴 Offline — Local Cache';
+                badge.style.background = 'rgba(248,113,113,0.15)';
+                badge.style.color = '#f87171';
+                wasOffline = true;
+                showNetworkStatus('offline', 
+                    '🔴 No Cloud Connection — Data is being saved locally. All changes will sync automatically when connection is restored.');
+            }
+        });
+    }
+
+    // Slow connection detection using navigation timing
+    if ('connection' in navigator) {
+        const conn = navigator.connection;
+        function checkSpeed() {
+            if (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g') {
+                showNetworkStatus('slow', 
+                    '⚠️ Slow Internet Detected (' + conn.effectiveType.toUpperCase() + ') — System is working but may respond slowly. Please be patient.');
+            }
+        }
+        checkSpeed();
+        conn.addEventListener('change', checkSpeed);
+    }
+
+    // Initial check
+    if (!navigator.onLine) {
+        showNetworkStatus('offline', '🔴 No Internet Connection — Working in Offline Mode.');
+        wasOffline = true;
+    }
+}
+
+function showNetworkStatus(type, message) {
+    if (!networkBar) return;
+    networkBar.className = '';
+    networkBar.classList.add(type);
+    networkBar.innerHTML = message + (type !== 'back-online' ? 
+        ' &nbsp;<span style="cursor:pointer;opacity:0.8;" onclick="hideNetworkStatus()">✕</span>' : '');
+    networkBar.style.display = 'block';
+}
+
+function hideNetworkStatus() {
+    if (!networkBar) return;
+    networkBar.style.display = 'none';
+    networkBar.className = '';
+}
+
+// Initialize network monitor on load
+window.addEventListener('load', initNetworkMonitor);
+
+// ── FORGOT PASSWORD ────────────────────────────────────────────
+function openForgotPassword() {
+    // Reset form fields
+    const li = document.getElementById('fpLoginId');
+    const ue = document.getElementById('fpUserEmail');
+    if (li) li.value = '';
+    if (ue) ue.value = '';
+    // Reset to step 1
+    document.getElementById('fpStep1').style.display = 'block';
+    document.getElementById('fpStep2').style.display = 'none';
+    const fpMsg = document.getElementById('fpMsg');
+    if (fpMsg) { fpMsg.style.display = 'none'; fpMsg.innerHTML = ''; }
+    // Open modal
+    const modal = document.getElementById('forgotPwdModal');
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+}
+
+async function sendPasswordReset() {
+    const fpMsg    = document.getElementById('fpMsg');
+    const fpLoginId  = document.getElementById('fpLoginId').value.trim();
+    const fpEmail    = document.getElementById('fpUserEmail').value.trim();
+    fpMsg.style.display = 'none';
+
+    // Validate inputs
+    if (!fpLoginId) {
+        fpMsg.style.display='block'; fpMsg.style.background='#fdecea'; fpMsg.style.color='#d93025'; fpMsg.style.border='1px solid #f5c6cb';
+        fpMsg.innerHTML = '❌ Please enter your Login ID.'; return;
+    }
+    if (!fpEmail || !fpEmail.includes('@')) {
+        fpMsg.style.display='block'; fpMsg.style.background='#fdecea'; fpMsg.style.color='#d93025'; fpMsg.style.border='1px solid #f5c6cb';
+        fpMsg.innerHTML = '❌ Please enter a valid email address.'; return;
+    }
+
+    if (!IS_FIREBASE_ON) {
+        fpMsg.style.display='block'; fpMsg.style.background='#fdecea'; fpMsg.style.color='#d93025'; fpMsg.style.border='1px solid #f5c6cb';
+        fpMsg.innerHTML = '❌ Password recovery requires Firebase to be configured.'; return;
+    }
+
+    // Verify login ID matches stored ID
+    if (fpLoginId !== ADMIN_LOGIN_ID) {
+        fpMsg.style.display='block'; fpMsg.style.background='#fdecea'; fpMsg.style.color='#d93025'; fpMsg.style.border='1px solid #f5c6cb';
+        fpMsg.innerHTML = '❌ Login ID does not match. Please check and try again.'; return;
+    }
+
+    // Verify email matches stored recovery email
+    try {
+        showLoader('Verifying details...', 'Please wait...');
+        const cfgSnap = await adminCfgRef.once('value');
+        const cfg = cfgSnap.val();
+        const savedRecoveryEmail = cfg && cfg.recoveryEmail ? cfg.recoveryEmail.toLowerCase() : '';
+
+        if (!savedRecoveryEmail) {
+            hideLoader();
+            fpMsg.style.display='block'; fpMsg.style.background='#fef3c7'; fpMsg.style.color='#d97706'; fpMsg.style.border='1px solid #fcd34d';
+            fpMsg.innerHTML = '⚠️ No recovery email is set. Please login and go to Admin Settings → Recovery Email to set one first.';
+            return;
+        }
+
+        if (fpEmail.toLowerCase() !== savedRecoveryEmail) {
+            hideLoader();
+            fpMsg.style.display='block'; fpMsg.style.background='#fdecea'; fpMsg.style.color='#d93025'; fpMsg.style.border='1px solid #f5c6cb';
+            fpMsg.innerHTML = '❌ Email does not match the saved recovery email. Please enter the exact email you saved in Admin Settings.';
+            return;
+        }
+
+        // All verified — send reset to the ADMIN_EMAIL (Firebase Auth email)
+        await fbAuth.sendPasswordResetEmail(ADMIN_EMAIL);
+        hideLoader();
+        document.getElementById('fpStep1').style.display = 'none';
+        document.getElementById('fpStep2').style.display = 'block';
+        const sentTo = document.getElementById('fpEmailSentTo');
+        // Show their personal email as where to look, but note it goes to Firebase email
+        if (sentTo) sentTo.innerText = ADMIN_EMAIL + ' (Firebase registered email)';
+
+    } catch(err) {
+        hideLoader();
+        fpMsg.style.display = 'block';
+        fpMsg.style.background = '#fdecea';
+        fpMsg.style.color = '#d93025';
+        fpMsg.style.border = '1px solid #f5c6cb';
+        if (err.code === 'auth/too-many-requests') {
+            fpMsg.innerHTML = '⚠️ Too many attempts. Please wait a few minutes and try again.';
+        } else {
+            fpMsg.innerHTML = '❌ ' + err.message;
+        }
+    }
+}
+
+// ── SAVE RECOVERY EMAIL ────────────────────────────────────────
+async function saveRecoveryEmail() {
+    const newEmail = document.getElementById('newRecoveryEmail').value.trim();
+    const pwd      = document.getElementById('recoveryEmailPwd').value.trim();
+
+    if (!newEmail || !newEmail.includes('@')) { showToast('Please enter a valid email address!','error'); return; }
+    if (!pwd) { showToast('Please enter your current password!','error'); return; }
+
+    if (!IS_FIREBASE_ON) { showToast('This feature requires Firebase!','error'); return; }
+
+    showLoader('Saving recovery email...','Please wait...');
+    try {
+        const cred = firebase.auth.EmailAuthProvider.credential(ADMIN_EMAIL, pwd);
+        await fbAuth.currentUser.reauthenticateWithCredential(cred);
+        await adminCfgRef.update({ recoveryEmail: newEmail.toLowerCase() });
+        document.getElementById('currentRecoveryEmail').innerText = newEmail;
+        document.getElementById('newRecoveryEmail').value = '';
+        document.getElementById('recoveryEmailPwd').value = '';
+        hideLoader();
+        showToast('✅ Recovery email saved! Keep it safe — needed for password recovery.');
+    } catch(e) {
+        hideLoader();
+        if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            showToast('Incorrect current password!','error');
+        } else {
+            showToast('Error: ' + e.message,'error');
+        }
+    }
+}
+
+
+// ── DYNAMIC SESSION GENERATOR ──────────────────────────────────
+// Sessions auto-generate based on current real year — no manual update needed
+function populateSessionDropdowns() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0=Jan, 11=Dec
+    
+    // Academic year: April-March cycle
+    // If month >= April (3), current session is currentYear-(currentYear+1)
+    // If month < April (Jan-Mar), current session is (currentYear-1)-currentYear
+    const academicStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+    const currentSession = `${academicStartYear}-${academicStartYear + 1}`;
+    const nextSession    = `${academicStartYear + 1}-${academicStartYear + 2}`;
+    
+    // Generate range: 10 years back, 10 years forward
+    const startYear = academicStartYear - 10;
+    const endYear   = academicStartYear + 10;
+    
+    // Helper: build option elements
+    function buildOptions(includeAll, selectedSession) {
+        let opts = '';
+        if (includeAll) opts += '<option value="ALL">📅 All Sessions</option>';
+        for (let y = startYear; y <= endYear; y++) {
+            const s = `${y}-${y + 1}`;
+            const sel = s === selectedSession ? ' selected' : '';
+            opts += `<option value="${s}"${sel}>${s}</option>`;
+        }
+        return opts;
+    }
+    
+    // Populate each select
+    const sesEl = document.getElementById('SESSION');
+    if (sesEl) sesEl.innerHTML = buildOptions(false, currentSession);
+    
+    const sesFilter = document.getElementById('sessionFilter');
+    if (sesFilter) sesFilter.innerHTML = buildOptions(true, 'ALL');
+    
+    const alumniSesFilter = document.getElementById('alumniSessionFilter');
+    if (alumniSesFilter) alumniSesFilter.innerHTML = buildOptions(true, 'ALL');
+    
+    const promoFrom = document.getElementById('promoFromSession');
+    if (promoFrom) promoFrom.innerHTML = buildOptions(false, currentSession);
+    
+    const promoTo = document.getElementById('promoToSession');
+    if (promoTo) promoTo.innerHTML = buildOptions(false, nextSession);
+}
+
+</script>
+</body>
+</html>
