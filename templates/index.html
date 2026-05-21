@@ -499,11 +499,11 @@
                 <div class="form-grid">
                     <!-- Academic -->
                     <h4 class="form-section-title">📚 Academic Details</h4>
-                    <div class="input-group"><label>Student ID (ST_ID) * <span style="font-size:11px;color:#ef4444;">To be filled manually by Admin</span></label><input type="number" id="ST_ID" required placeholder="Enter Student ID manually" style="border:2px solid var(--primary);"></div>
+                    <div class="input-group"><label>Student ID (ST_ID) * <span style="font-size:11px;color:#ef4444;"></span></label><input type="number" id="ST_ID" required placeholder="Enter Student ID manually" style="border:2px solid var(--primary);"></div>
                     <div class="input-group"><label>Academic Session *</label>
                         <select id="SESSION" required></select>
                     </div>
-                    <div class="input-group"><label>Admission No * (Numbers Only)</label><input type="text" id="ADMISSION_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required></div>
+                    <div class="input-group"><label>Admission No *</label><input type="text" id="ADMISSION_NO" oninput="this.value=this.value.replace(/[^0-9+\-._]/g,'')" required></div>
                     <div class="input-group"><label>Date of Admission *</label><input type="date" id="D_O_A" required></div>
                     <div class="input-group"><label>Class *</label>
                         <select id="CLASS" required>
@@ -520,9 +520,9 @@
 
                     <!-- Personal -->
                     <h4 class="form-section-title">👤 Personal Details</h4>
-                    <div class="input-group"><label>Student Full Name * (String Only)</label><input type="text" id="NAME_OF_STUDENT" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
-                    <div class="input-group"><label>Father Name * (String Only)</label><input type="text" id="FATHER_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
-                    <div class="input-group"><label>Mother Name * (String Only)</label><input type="text" id="MOTHER_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Student Full Name * </label><input type="text" id="NAME_OF_STUDENT" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Father Name * </label><input type="text" id="FATHER_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
+                    <div class="input-group"><label>Mother Name *</label><input type="text" id="MOTHER_NAME" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" required></div>
                     <div class="input-group"><label>Date of Birth *</label><input type="date" id="D_O_B" required></div>
                     <div class="input-group"><label>Gender *</label>
                         <select id="GENDER" required><option value="MALE">Male</option><option value="FEMALE">Female</option></select>
@@ -530,7 +530,7 @@
                     <div class="input-group"><label>Category *</label>
                         <select id="CATEGORY" required>
                             <option value="GENERAL">General</option><option value="OBC">OBC</option>
-                            <option value="SC">SC</option><option value="ST">ST</option><option value="Minority">Minority</option>
+                            <option value="SC">SC</option><option value="ST">ST</option>
                         </select>
                     </div>
 
@@ -555,8 +555,8 @@
 
                     <!-- Contact -->
                     <h4 class="form-section-title">📞 Contact & Identity</h4>
-                    <div class="input-group"><label>Aadhar No * (12 Digits)</label><input type="text" id="AADHAR_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="12" minlength="12" required></div>
-                    <div class="input-group"><label>Mobile No * (10 Digits)</label><input type="text" id="MOBILE_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="10" minlength="10" required></div>
+                    <div class="input-group"><label>Aadhar No</label><input type="text" id="AADHAR_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')"  placeholder="Enter Aadhar no"></div>
+                    <div class="input-group"><label>Mobile No</label><input type="text" id="MOBILE_NO" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Enter Phone no"></div>
                     <div class="input-group">
                         <label>Upload Photo (Optional)</label>
                         <div style="display:flex;align-items:center;gap:10px;">
@@ -640,7 +640,6 @@
                         <option value="OBC">OBC</option>
                         <option value="SC">SC</option>
                         <option value="ST">ST</option>
-                        <option value="Minority">Minority</option>
                     </select>
                     <input type="text" id="searchInput" placeholder="Search name, aadhar, mobile, village, father name..." onkeyup="filterData()" style="flex:1;">
                 </div>
@@ -1509,15 +1508,14 @@ function compressImage(event) {
 function saveStudent(e) {
     e.preventDefault();
     const stId = document.getElementById('ST_ID').value.trim();
-    if (!stId) { showToast('Student ID (ST_ID) required hai!', 'error'); return; }
-    const adhr   = document.getElementById('AADHAR_NO').value;
+    if (!stId) { showToast('Student ID (ST_ID) required', 'error'); return; }
+   // const adhr   = document.getElementById('AADHAR_NO').value;
     const mob    = document.getElementById('MOBILE_NO').value;
     const pin    = document.getElementById('PINCODE').value;
     const admNo  = document.getElementById('ADMISSION_NO').value;
     const editIdx = parseInt(document.getElementById('editIndex').value);
 
-    if (adhr.length!==12) { showToast('Aadhar No. must be 12 digits!','error'); return; }
-    if (mob.length!==10)  { showToast('Mobile No. must be 10 digits!','error'); return; }
+
     if (pin.length!==6)   { showToast('Pincode must be 6 digits!','error'); return; }
 
     const disability = document.getElementById('DISABILITY').value;
@@ -1533,9 +1531,9 @@ function saveStudent(e) {
         showToast('Guardian Aadhar No. must be exactly 12 digits!','error'); return;
     }
 
-    const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
-    if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
-    const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
+  //  const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
+  //  if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
+  //  const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
     if (isStIdDup) { showToast('Duplicate ST_ID! This ID already exists.','error'); return; }
 
     const FIELDS = ['ST_ID','SESSION','ADMISSION_NO','D_O_A','SCHOOL_NAME','AAPAR_ID','PEN_ID',
@@ -1679,8 +1677,6 @@ function updateDbStatsBar(arr) {
     const obc = arr.filter(s=>s.CATEGORY==='OBC').length;
     const sc  = arr.filter(s=>s.CATEGORY==='SC').length;
     const st  = arr.filter(s=>s.CATEGORY==='ST').length;
-    const min  = arr.filter(s=>s.CATEGORY==='Minority').length;
-
     document.getElementById('dbStatsBar').innerHTML = `
         <span style="color:var(--primary);">📊 Showing: <strong>${arr.length}</strong></span>
         <span style="color:#3b82f6;">👦 Boys: <strong>${arr.filter(s=>s.GENDER==='MALE').length}</strong></span>
@@ -1688,7 +1684,7 @@ function updateDbStatsBar(arr) {
         <span style="color:#7c3aed;">♿ Divyang: <strong>${arr.filter(s=>s.DISABILITY==='YES').length}</strong></span>
         <span style="color:#059669;">🏦 Own A/C: <strong>${arr.filter(s=>!s.BANK_HOLDER_TYPE||s.BANK_HOLDER_TYPE==='STUDENT').length}</strong></span>
         <span style="color:#d97706;">👨‍👩‍👧 Guardian A/C: <strong>${arr.filter(s=>s.BANK_HOLDER_TYPE==='GUARDIAN').length}</strong></span>
-        <span style="color:#6b7280; border-left:2px solid #e5e7eb; padding-left:10px;">Gen: <strong>${gen}</strong> | OBC: <strong>${obc}</strong> | SC: <strong>${sc}</strong> | ST: <strong>${st}</strong></span> | Minority: <strong>${min}</strong></span>`;
+        <span style="color:#6b7280; border-left:2px solid #e5e7eb; padding-left:10px;">Gen: <strong>${gen}</strong> | OBC: <strong>${obc}</strong> | SC: <strong>${sc}</strong> | ST: <strong>${st}</strong></span>`;
 }
 
 function updateTable(arr) {
