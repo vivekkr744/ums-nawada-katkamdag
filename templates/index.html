@@ -1509,7 +1509,7 @@ function saveStudent(e) {
     e.preventDefault();
     const stId = document.getElementById('ST_ID').value.trim();
     if (!stId) { showToast('Student ID (ST_ID) required', 'error'); return; }
-   // const adhr   = document.getElementById('AADHAR_NO').value;
+    const adhr   = document.getElementById('AADHAR_NO').value;
     const mob    = document.getElementById('MOBILE_NO').value;
     const pin    = document.getElementById('PINCODE').value;
     const admNo  = document.getElementById('ADMISSION_NO').value;
@@ -1531,9 +1531,9 @@ function saveStudent(e) {
         showToast('Guardian Aadhar No. must be exactly 12 digits!','error'); return;
     }
 
-  //  const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
-  //  if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
-  //  const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
+    const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
+    if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
+    const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
     if (isStIdDup) { showToast('Duplicate ST_ID! This ID already exists.','error'); return; }
 
     const FIELDS = ['ST_ID','SESSION','ADMISSION_NO','D_O_A','SCHOOL_NAME','AAPAR_ID','PEN_ID',
