@@ -530,7 +530,7 @@
                     <div class="input-group"><label>Category *</label>
                         <select id="CATEGORY" required>
                             <option value="GENERAL">General</option><option value="OBC">OBC</option>
-                            <option value="SC">SC</option><option value="ST">ST</option>
+                            <option value="SC">SC</option><option value="ST">ST</option><option value="Minority">ST</option>
                         </select>
                     </div>
 
@@ -640,6 +640,7 @@
                         <option value="OBC">OBC</option>
                         <option value="SC">SC</option>
                         <option value="ST">ST</option>
+                        <option value="Minority">Minority</option>
                     </select>
                     <input type="text" id="searchInput" placeholder="Search name, aadhar, mobile, village, father name..." onkeyup="filterData()" style="flex:1;">
                 </div>
@@ -1509,8 +1510,8 @@ function saveStudent(e) {
     e.preventDefault();
     const stId = document.getElementById('ST_ID').value.trim();
     if (!stId) { showToast('Student ID (ST_ID) required', 'error'); return; }
-    const adhr   = document.getElementById('AADHAR_NO').value;
-    const mob    = document.getElementById('MOBILE_NO').value;
+    // const adhr   = document.getElementById('AADHAR_NO').value;
+    // const mob    = document.getElementById('MOBILE_NO').value;
     const pin    = document.getElementById('PINCODE').value;
     const admNo  = document.getElementById('ADMISSION_NO').value;
     const editIdx = parseInt(document.getElementById('editIndex').value);
@@ -1531,10 +1532,10 @@ function saveStudent(e) {
         showToast('Guardian Aadhar No. must be exactly 12 digits!','error'); return;
     }
 
-    const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
-    if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
-    const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
-    if (isStIdDup) { showToast('Duplicate ST_ID! This ID already exists.','error'); return; }
+    // const isDup = students.some((s,i) => i!==editIdx && (s.AADHAR_NO===adhr || s.ADMISSION_NO===admNo));
+    // if (isDup) { showToast('Duplicate! Aadhar or Admission No already exists.','error'); return; }
+     const isStIdDup = students.some((s,i) => i!==editIdx && String(s.ST_ID)===String(stId));
+     if (isStIdDup) { showToast('Duplicate ST_ID! This ID already exists.','error'); return; }
 
     const FIELDS = ['ST_ID','SESSION','ADMISSION_NO','D_O_A','SCHOOL_NAME','AAPAR_ID','PEN_ID',
                     'NAME_OF_STUDENT','FATHER_NAME','MOTHER_NAME','D_O_B','GENDER','CATEGORY',
@@ -1677,6 +1678,7 @@ function updateDbStatsBar(arr) {
     const obc = arr.filter(s=>s.CATEGORY==='OBC').length;
     const sc  = arr.filter(s=>s.CATEGORY==='SC').length;
     const st  = arr.filter(s=>s.CATEGORY==='ST').length;
+    const minor  = arr.filter(s=>s.CATEGORY==='Minority').length;   
     document.getElementById('dbStatsBar').innerHTML = `
         <span style="color:var(--primary);">📊 Showing: <strong>${arr.length}</strong></span>
         <span style="color:#3b82f6;">👦 Boys: <strong>${arr.filter(s=>s.GENDER==='MALE').length}</strong></span>
@@ -1684,7 +1686,7 @@ function updateDbStatsBar(arr) {
         <span style="color:#7c3aed;">♿ Divyang: <strong>${arr.filter(s=>s.DISABILITY==='YES').length}</strong></span>
         <span style="color:#059669;">🏦 Own A/C: <strong>${arr.filter(s=>!s.BANK_HOLDER_TYPE||s.BANK_HOLDER_TYPE==='STUDENT').length}</strong></span>
         <span style="color:#d97706;">👨‍👩‍👧 Guardian A/C: <strong>${arr.filter(s=>s.BANK_HOLDER_TYPE==='GUARDIAN').length}</strong></span>
-        <span style="color:#6b7280; border-left:2px solid #e5e7eb; padding-left:10px;">Gen: <strong>${gen}</strong> | OBC: <strong>${obc}</strong> | SC: <strong>${sc}</strong> | ST: <strong>${st}</strong></span>`;
+        <span style="color:#6b7280; border-left:2px solid #e5e7eb; padding-left:10px;">Gen: <strong>${gen}</strong> | OBC: <strong>${obc}</strong> | SC: <strong>${sc}</strong> | ST: <strong>${st}</strong> | Minority: <strong>${minor}</strong></span>`;
 }
 
 function updateTable(arr) {
